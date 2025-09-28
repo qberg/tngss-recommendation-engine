@@ -1,0 +1,33 @@
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    MONGODB_URL: str = "mongodb://localhost:27017"
+    DATABASE_NAME: str = "tngss_database"
+
+    LOGIN_COLLECTION: str = "fake_login_info"
+    USERS_PROFILE_COLLECTION: str = "fake_profile_management"
+    ORGANISATION_PROFILE_COLLECTION: str = "fake_organisation_profile_management"
+    CONTEXT_BUILDER_COLLECTION: str = "fake_context_builder_management"
+    EVENTS_COLLECTION: str = "events"
+
+    PAYLOAD_CMS_URL: str = "https://cms.tngss.startuptn.in/api"
+
+    API_HOST: str = "0.0.0.0"
+    API_PORT: int = 8000
+
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = True
+
+    DEFAULT_RECOMMENDATION_LIMIT: int = 10
+    MIN_SCORE_THRESHOLD: float = 0.1
+
+    OPENAI_API_KEY: str = ""
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+        extra = "ignore"
+
+
+settings = Settings()

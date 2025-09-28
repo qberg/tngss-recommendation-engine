@@ -1,0 +1,615 @@
+{
+  "createdAt": "2025-09-22T11:39:16.533Z",
+  "updatedAt": "2025-09-27T16:53:26.013Z",
+  "title": "Ecosystems Without Borders: Designing the Startup World of  2030",
+  "isPublic": true,
+  "main_or_partner": "main_event",
+  "format": {
+    "createdAt": "2025-08-14T05:30:35.424Z",
+    "updatedAt": "2025-08-14T05:30:35.424Z",
+    "name": "Panel Discussions",
+    "slug": "panel-discussions",
+    "id": "689d747ba896de648d10014d"
+  },
+  "tags": [
+    {
+      "createdAt": "2025-08-18T07:14:41.441Z",
+      "updatedAt": "2025-08-18T07:14:41.441Z",
+      "name": "Global Market Expansion",
+      "slug": "global-market-expansion",
+      "id": "68a2d2e19502dd7ebcd83d24"
+    }
+  ],
+  "current_registerations": 3,
+  "slug": "ecosystems-without-borders-designing-the-startup-world-of-2030",
+  "schedule": {
+    "from_date": "2025-10-09T06:50:00.000Z",
+    "to_date": "2025-10-09T07:30:00.000Z"
+  },
+  "hall": {
+    "createdAt": "2025-08-08T10:23:16.021Z",
+    "updatedAt": "2025-08-29T12:32:57.823Z",
+    "name": "Hall C",
+    "slug": "hall-c",
+    "venue": {
+      "createdAt": "2025-08-05T07:43:24.272Z",
+      "updatedAt": "2025-08-05T08:04:12.691Z",
+      "name": "Codissia Trade Fair Complex",
+      "city": "Coimbatore",
+      "mapUrl": "https://maps.app.goo.gl/vn3j3yvT78X7QwM9A",
+      "type": "main_event",
+      "id": "6891b61c4d32b3e7895cc46e"
+    },
+    "zones_count": 6,
+    "image": {
+      "createdAt": "2025-08-29T12:32:56.465Z",
+      "updatedAt": "2025-08-29T12:32:56.465Z",
+      "alt": "Hall C Codi",
+      "mediaType": "venue_photos",
+      "audit-log": {
+        "createdBy": "6892e7ee31820a670948ab28",
+        "updatedBy": "6892e7ee31820a670948ab28",
+        "log": {
+          "createdAt": "2025-08-29T12:32:56.464Z",
+          "updatedAt": "2025-08-29T12:32:56.464Z",
+          "version": 1
+        }
+      },
+      "filename": "hall-ccodi.png",
+      "mimeType": "image/png",
+      "filesize": 45125,
+      "width": 1667,
+      "height": 1563,
+      "focalX": 50,
+      "focalY": 50,
+      "id": "68b19df81181ff3ea2103b0b",
+      "url": "https://dejqwog80n2lx.cloudfront.net/hall-ccodi.png",
+      "thumbnailURL": null
+    },
+    "zones": {
+      "docs": [
+        "68d11950931abc99240bb51f",
+        "68d04fee4fe33f8be4c7c741",
+        "68a2290c05094cc9dd917cf5",
+        "68a228f005094cc9dd917ce9",
+        "689d8c1fba2670b68a664374",
+        "689d8b6dba2670b68a664340",
+        "6895da5f645e969ddea21001",
+        "6895d9f0645e969ddea20fab"
+      ],
+      "hasNextPage": false
+    },
+    "id": "6895d014645e969ddea20e6e"
+  },
+  "zone": {
+    "createdAt": "2025-09-22T09:39:28.112Z",
+    "updatedAt": "2025-09-22T09:40:08.273Z",
+    "hall": {
+      "createdAt": "2025-08-08T10:23:16.021Z",
+      "updatedAt": "2025-08-29T12:32:57.823Z",
+      "name": "Hall C",
+      "slug": "hall-c",
+      "venue": "6891b61c4d32b3e7895cc46e",
+      "zones_count": 6,
+      "image": "68b19df81181ff3ea2103b0b",
+      "zones": {
+        "docs": [
+          "68d11950931abc99240bb51f",
+          "68d04fee4fe33f8be4c7c741",
+          "68a2290c05094cc9dd917cf5",
+          "68a228f005094cc9dd917ce9",
+          "689d8c1fba2670b68a664374",
+          "689d8b6dba2670b68a664340",
+          "6895da5f645e969ddea21001",
+          "6895d9f0645e969ddea20fab"
+        ],
+        "hasNextPage": false
+      },
+      "id": "6895d014645e969ddea20e6e"
+    },
+    "slug": "futuristic-stage",
+    "name": "Futuristic Stage",
+    "is_featured": true,
+    "description": "The Futuristic Stage showcases the next frontier of technology, innovation, and visionary thinking. Sessions cover emerging trends such as AI, Web3, blockchain, space tech, deep tech, and disruptive innovations shaping the future. Attendees can expect thought-provoking keynotes, panels, and demos that inspire forward-thinking strategies and actionable insights to stay ahead in the rapidly evolving global landscape.",
+    "id": "68d11950931abc99240bb51f"
+  },
+  "partner_event_venue": {},
+  "audit-log": {
+    "createdBy": {
+      "createdAt": "2025-09-20T06:42:09.249Z",
+      "updatedAt": "2025-09-27T10:57:20.512Z",
+      "name": "Naveen",
+      "roles": ["admin", "user"],
+      "status": "active",
+      "lastLogin": "2025-09-20T06:42:08.983Z",
+      "email": "naveen@startuptn.in",
+      "id": "68ce4cc17303db74a65f859a",
+      "sessions": []
+    },
+    "updatedBy": {
+      "createdAt": "2025-08-02T07:46:35.565Z",
+      "updatedAt": "2025-09-27T18:05:46.482Z",
+      "name": "Reneeth",
+      "roles": ["user", "admin"],
+      "status": "active",
+      "email": "reneeth@minsky.in",
+      "sessions": [
+        {
+          "id": "0920e5bd-84b0-4348-942e-15dbc7a7c0d5",
+          "createdAt": "2025-09-27T16:06:45.135Z",
+          "expiresAt": "2025-09-27T20:05:46.481Z"
+        }
+      ],
+      "lastLogin": "2025-08-02T07:51:27.588Z",
+      "id": "688dc25bbcb91167b19724dc"
+    },
+    "log": {
+      "createdAt": "2025-09-22T11:39:16.521Z",
+      "updatedAt": "2025-09-27T16:53:25.993Z",
+      "version": 5
+    }
+  },
+  "agenda": [
+    {
+      "time": "12:20 PM",
+      "description": "Ecosystems Without Borders: Designing the Startup World of  2030",
+      "id": "68d81638f44d29fd0d2cf51e"
+    }
+  ],
+  "speakers": [
+    {
+      "speaker": {
+        "createdAt": "2025-09-22T14:22:34.105Z",
+        "updatedAt": "2025-09-26T06:45:52.328Z",
+        "slug": "oluwaseyi-abiodun-adepoju",
+        "isPublic": true,
+        "deleted": false,
+        "speaks_at": [],
+        "profile_image": {
+          "createdAt": "2025-09-22T14:18:06.684Z",
+          "updatedAt": "2025-09-22T14:18:06.684Z",
+          "alt": "Oluwaseyi Abiodun Adepoju",
+          "mediaType": "speaker_photos",
+          "audit-log": {
+            "createdBy": "68909be5a369fa2353c12f7f",
+            "updatedBy": "68909be5a369fa2353c12f7f",
+            "log": {
+              "createdAt": "2025-09-22T14:18:06.681Z",
+              "updatedAt": "2025-09-22T14:18:06.681Z",
+              "version": 1
+            }
+          },
+          "filename": "oluwaseyi-abiodun-adepoju.png",
+          "mimeType": "image/png",
+          "filesize": 1137353,
+          "width": 1080,
+          "height": 1080,
+          "focalX": 50,
+          "focalY": 50,
+          "id": "68d15a9e646ca5be289fe626",
+          "url": "https://dejqwog80n2lx.cloudfront.net/oluwaseyi-abiodun-adepoju.png",
+          "thumbnailURL": null
+        },
+        "name": "Oluwaseyi Abiodun Adepoju",
+        "designation": "Digital Trade & Investment",
+        "organization": "Office of Nigeria Digital Innovation (NITDA) Federal Ministry of Communications, innovation and Digital Economy",
+        "speaker_type": {
+          "createdAt": "2025-08-02T09:11:37.165Z",
+          "updatedAt": "2025-09-26T13:10:45.011Z",
+          "name": "International",
+          "slug": "international",
+          "isActive": true,
+          "requiresVisa": false,
+          "averageBudget": {
+            "currency": "INR"
+          },
+          "requiredDocuments": [],
+          "usageCount": 0,
+          "icon": "🌍",
+          "sort_order": 2,
+          "id": "688dd649bcb91167b197263b"
+        },
+        "linkedin_url": "https://www.linkedin.com/in/africanbusinessconsultant/",
+        "location": {
+          "country": "Nigeria"
+        },
+        "summary": "Oluwaseyi Abiodun Adepoju is a Global Business Strategist and Senior Consultant at ONDI Nigeria, with expertise in digital trade, investment, and startup ecosystem development. He has played a significant role in building and scaling startups across Africa and beyond, earning recognition for his impact on technology advocacy and innovation. Adepoju brings a deep understanding of startup growth strategies, investment opportunities, and market expansion. At the Tamil Nadu Global Startup Summit 2025, he offers valuable insights on navigating global markets, leveraging digital technologies, and driving sustainable business growth. His session is essential for entrepreneurs and investors seeking practical knowledge to scale startups and foster innovation, making his contribution highly inspiring and impactful",
+        "experience": [
+          {
+            "company": "ONDI Nigeria",
+            "area": "Nigeria",
+            "designation": "Senior Consultant - Digital Trade & Investment",
+            "id": "68d15aed889e86a3976ae885"
+          },
+          {
+            "company": "Grow Movement",
+            "area": "Uganda, Rwanda and Malawi",
+            "designation": "Business Consultant",
+            "id": "68d15b13889e86a3976ae886"
+          },
+          {
+            "company": "PROSON GROUP",
+            "designation": "Director",
+            "id": "68d15b2f889e86a3976ae887"
+          },
+          {
+            "company": "MAXIMUS",
+            "designation": "Venture Partner - West Africa",
+            "id": "68d15b44889e86a3976ae888"
+          }
+        ],
+        "alma_matter": [
+          {
+            "college": "Frankfurt School of Finance & Management",
+            "degree": "Agriculture Finance",
+            "id": "68d15b5b889e86a3976ae889"
+          },
+          {
+            "college": "Harvard Business School Online",
+            "degree": "Global Business",
+            "id": "68d15b80889e86a3976ae88a"
+          },
+          {
+            "college": "University of Lagos",
+            "degree": "Political Science",
+            "id": "68d15b91889e86a3976ae88b"
+          }
+        ],
+        "languages": [],
+        "travel_details": [],
+        "duration": {
+          "from_date": "2025-10-09T11:30:00.000Z",
+          "to_date": "2025-10-10T11:30:00.000Z"
+        },
+        "status": "confirmed",
+        "sort_order": 1,
+        "audit-log": {
+          "createdBy": {
+            "createdAt": "2025-08-04T11:39:17.668Z",
+            "updatedAt": "2025-09-27T10:32:19.167Z",
+            "name": "Sathish",
+            "roles": ["user", "event-manager"],
+            "status": "active",
+            "lastLogin": "2025-08-28T07:28:36.926Z",
+            "email": "tech@startuptn.in",
+            "id": "68909be5a369fa2353c12f7f",
+            "sessions": []
+          },
+          "updatedBy": {
+            "createdAt": "2025-08-04T11:39:17.668Z",
+            "updatedAt": "2025-09-27T10:32:19.167Z",
+            "name": "Sathish",
+            "roles": ["user", "event-manager"],
+            "status": "active",
+            "lastLogin": "2025-08-28T07:28:36.926Z",
+            "email": "tech@startuptn.in",
+            "id": "68909be5a369fa2353c12f7f",
+            "sessions": []
+          },
+          "log": {
+            "createdAt": "2025-09-22T14:22:34.096Z",
+            "updatedAt": "2025-09-26T06:45:52.327Z",
+            "version": 2
+          }
+        },
+        "speaking_events": {
+          "docs": ["68d13564c75fa405fe97c45f"],
+          "hasNextPage": false
+        },
+        "id": "68d15baac75fa405fe97eb0b"
+      },
+      "id": "68d687f02d90ad795b514cd9"
+    },
+    {
+      "speaker": {
+        "createdAt": "2025-09-18T14:22:34.925Z",
+        "updatedAt": "2025-09-27T07:46:45.653Z",
+        "slug": "kwesi-ofori-junior",
+        "isPublic": true,
+        "speaks_at": [],
+        "profile_image": {
+          "createdAt": "2025-09-18T14:06:03.470Z",
+          "updatedAt": "2025-09-18T14:06:03.470Z",
+          "alt": "KWESI JUNIOR OFORI",
+          "mediaType": "speaker_photos",
+          "audit-log": {
+            "createdBy": "68921489cf27b2edccd146fa",
+            "updatedBy": "68921489cf27b2edccd146fa",
+            "log": {
+              "createdAt": "2025-09-18T14:06:03.469Z",
+              "updatedAt": "2025-09-18T14:06:03.469Z",
+              "version": 1
+            }
+          },
+          "filename": "kwesi-junior-ofori.png",
+          "mimeType": "image/png",
+          "filesize": 1304835,
+          "width": 1080,
+          "height": 1080,
+          "focalX": 50,
+          "focalY": 50,
+          "id": "68cc11cb08c8707c4b937ff3",
+          "url": "https://dejqwog80n2lx.cloudfront.net/kwesi-junior-ofori.png",
+          "thumbnailURL": null
+        },
+        "name": "Kwesi Ofori Junior",
+        "designation": "Founder and Executive Director",
+        "organization": "SME GrowAfrica",
+        "speaker_type": {
+          "createdAt": "2025-08-02T09:11:37.165Z",
+          "updatedAt": "2025-09-26T13:10:45.011Z",
+          "name": "International",
+          "slug": "international",
+          "isActive": true,
+          "requiresVisa": false,
+          "averageBudget": {
+            "currency": "INR"
+          },
+          "requiredDocuments": [],
+          "usageCount": 0,
+          "icon": "🌍",
+          "sort_order": 2,
+          "id": "688dd649bcb91167b197263b"
+        },
+        "linkedin_url": "https://www.linkedin.com/in/kwesi-ofori-jnr-7b57b429/",
+        "location": {
+          "country": "Ghana"
+        },
+        "summary": "Kwesi Ofori Junior is the Founder and Executive Director of SME GrowAfrica (SMEGA), one of Ghana’s leading platforms advancing small and medium enterprises since 2013. A dynamic entrepreneur and business consultant who drives programs that accelerate SME growth, innovation, and competitiveness across Africa.\nHe has partnered with organizations such as MTN Ghana, the Ministry of Trade & Industry, Ghana Enterprise Agency (GEA), Ghana Investment Promotion Centre (GIPC), and international partners like PUM Netherlands, while also collaborating with universities, Insurance companies and Banks to establish entrepreneurship hubs and incubation programs. Through SMEGA’s award scheme, capacity-building initiatives, and its Access to Market Program under the OneAfrica online marketplace, Kwesi has supported SMEs to embrace digitalization and expand globally.\nAt the Tamil Nadu Global Startup Summit 2025, he shares insights on Africa’s entrepreneurship ecosystem, cross-continental partnerships, and sustainable growth strategies.",
+        "experience": [
+          {
+            "company": "OneAfrica Online",
+            "designation": "Founder",
+            "id": "68cc152068be7516c4b2df23"
+          },
+          {
+            "company": "SME GrowAfrica - SMEGA",
+            "designation": "Founder | Executive Director ",
+            "id": "68cc152e68be7516c4b2df24"
+          },
+          {
+            "company": "OneAfrica One Limited",
+            "designation": "CEO & Co-founder ",
+            "id": "68cc154368be7516c4b2df25"
+          },
+          {
+            "company": "obuoba fm",
+            "designation": "Sale Executive and Event Management ",
+            "id": "68cc155468be7516c4b2df26"
+          }
+        ],
+        "alma_matter": [],
+        "languages": [],
+        "travel_details": [],
+        "duration": {
+          "from_date": "2025-10-09T11:30:00.000Z",
+          "to_date": "2025-10-10T11:30:00.000Z"
+        },
+        "status": "confirmed",
+        "sort_order": 1,
+        "audit-log": {
+          "createdBy": "68921489cf27b2edccd146fa",
+          "updatedBy": {
+            "createdAt": "2025-09-20T06:42:09.249Z",
+            "updatedAt": "2025-09-27T10:57:20.512Z",
+            "name": "Naveen",
+            "roles": ["admin", "user"],
+            "status": "active",
+            "lastLogin": "2025-09-20T06:42:08.983Z",
+            "email": "naveen@startuptn.in",
+            "id": "68ce4cc17303db74a65f859a",
+            "sessions": []
+          },
+          "log": {
+            "createdAt": "2025-09-18T14:22:34.918Z",
+            "updatedAt": "2025-09-27T07:46:45.652Z",
+            "version": 3
+          }
+        },
+        "deleted": false,
+        "speaking_events": {
+          "docs": ["68d13564c75fa405fe97c45f", "68d112eee549e866a5d61cb0"],
+          "hasNextPage": false
+        },
+        "id": "68cc15aaa68b84f3169775a4"
+      },
+      "id": "68d688022d90ad795b514cda"
+    },
+    {
+      "speaker": {
+        "createdAt": "2025-09-18T18:01:53.500Z",
+        "updatedAt": "2025-09-26T15:31:06.328Z",
+        "slug": "yamato-nakamoto",
+        "isPublic": true,
+        "speaks_at": [],
+        "profile_image": {
+          "createdAt": "2025-09-18T17:58:06.936Z",
+          "updatedAt": "2025-09-26T15:27:54.954Z",
+          "alt": "YAMATO NAKAMOTO",
+          "mediaType": "speaker_photos",
+          "audit-log": {
+            "createdBy": "68921489cf27b2edccd146fa",
+            "updatedBy": "68ce4cc17303db74a65f859a",
+            "log": {
+              "createdAt": "2025-09-18T17:58:06.934Z",
+              "updatedAt": "2025-09-26T15:27:54.953Z",
+              "version": 2
+            }
+          },
+          "filename": "yamato-nakamoto-1.png",
+          "mimeType": "image/png",
+          "filesize": 1289925,
+          "width": 1080,
+          "height": 1080,
+          "focalX": 50,
+          "focalY": 50,
+          "thumbnailURL": null,
+          "url": "https://dejqwog80n2lx.cloudfront.net/yamato-nakamoto-1.png",
+          "id": "68cc482ef07962b460168bb6"
+        },
+        "name": "YAMATO NAKAMOTO",
+        "designation": "Manager of Co-Creation and Planning",
+        "organization": "Sapporo Transnational Expansion and Partnership (STEP)",
+        "speaker_type": {
+          "createdAt": "2025-08-02T09:11:37.165Z",
+          "updatedAt": "2025-09-26T13:10:45.011Z",
+          "name": "International",
+          "slug": "international",
+          "isActive": true,
+          "requiresVisa": false,
+          "averageBudget": {
+            "currency": "INR"
+          },
+          "requiredDocuments": [],
+          "usageCount": 0,
+          "icon": "🌍",
+          "sort_order": 2,
+          "id": "688dd649bcb91167b197263b"
+        },
+        "linkedin_url": "https://www.linkedin.com/in/yamato-nakamoto-64746a196/",
+        "location": {
+          "city": "Greater Sapporo",
+          "country": "Japan"
+        },
+        "summary": "Yamato Nakamoto is the Global Manager at STARTUP HOKKAIDO, leading ecosystem building and startup support initiatives in Hokkaido, Japan. With over six years at STARTUP HOKKAIDO, he has been instrumental in launching collaborative networks for startup funding and mentorship, including the HOKKAIDO STARTUP RUNWAY. He also founded Kantominto Inc., reflecting his entrepreneurial background. Nakamoto actively promotes international startup collaboration and innovation, making him a key voice for connecting global startup ecosystems. His session at the Tamil Nadu Global Startup Summit 2025 promises valuable insights on scaling startups through cross-sector partnerships and ecosystem development.\n",
+        "experience": [
+          {
+            "company": "Sapporo Transnational Expansion and Partnership (STEP)",
+            "designation": "Manager of Co-Creation and Planning ",
+            "id": "68cc48846a4347018c501bdf"
+          },
+          {
+            "company": "STARTUP HOKKAIDO",
+            "designation": "Global Manager",
+            "id": "68cc486c6a4347018c501bde"
+          },
+          {
+            "company": "Hokkaido Innovation Week",
+            "designation": "Project Manager",
+            "id": "68cc48a86a4347018c501be0"
+          },
+          {
+            "company": "Sapporo city",
+            "designation": "Chief of Startup promotion section",
+            "id": "68cc48be6a4347018c501be1"
+          }
+        ],
+        "alma_matter": [
+          {
+            "college": "Otaru University of Commerce",
+            "degree": "Bachelor of Commerce - BCom,",
+            "id": "68cc48db6a4347018c501be2"
+          }
+        ],
+        "languages": [],
+        "travel_details": [],
+        "duration": {
+          "from_date": "2025-10-09T11:30:00.000Z",
+          "to_date": "2025-10-10T11:30:00.000Z"
+        },
+        "status": "confirmed",
+        "sort_order": 1,
+        "audit-log": {
+          "createdBy": "68921489cf27b2edccd146fa",
+          "updatedBy": {
+            "createdAt": "2025-09-20T06:42:09.249Z",
+            "updatedAt": "2025-09-27T10:57:20.512Z",
+            "name": "Naveen",
+            "roles": ["admin", "user"],
+            "status": "active",
+            "lastLogin": "2025-09-20T06:42:08.983Z",
+            "email": "naveen@startuptn.in",
+            "id": "68ce4cc17303db74a65f859a",
+            "sessions": []
+          },
+          "log": {
+            "createdAt": "2025-09-18T18:01:53.496Z",
+            "updatedAt": "2025-09-26T15:31:06.326Z",
+            "version": 3
+          }
+        },
+        "deleted": false,
+        "speaking_events": {
+          "docs": ["68d13564c75fa405fe97c45f", "68d1163077a0204760b07fbd"],
+          "hasNextPage": false
+        },
+        "id": "68cc4911f07962b460168c15"
+      },
+      "id": "68d688282d90ad795b514cdb"
+    }
+  ],
+  "registeration_mode": "fcfs",
+  "fcfs_settings": {
+    "capacity_settings": {
+      "capacity_type": "unlimited"
+    },
+    "enable_waitlist": false,
+    "waitlist_capacity": 10,
+    "auto_promote_from_waitlist": true,
+    "registeration": {
+      "from_date": "2025-09-21T18:30:00.000Z",
+      "to_date": "2025-10-09T06:50:00.000Z"
+    },
+    "unlimited_capacity_settings": {}
+  },
+  "approval_settings": {
+    "registeration": {},
+    "capacity_settings": {}
+  },
+  "deleted": false,
+  "banner_image": {
+    "createdAt": "2025-09-24T07:05:50.848Z",
+    "updatedAt": "2025-09-24T07:05:50.848Z",
+    "alt": "Banner",
+    "mediaType": "event_images",
+    "audit-log": {
+      "createdBy": {
+        "createdAt": "2025-09-20T06:42:09.249Z",
+        "updatedAt": "2025-09-27T10:57:20.512Z",
+        "name": "Naveen",
+        "roles": ["admin", "user"],
+        "status": "active",
+        "lastLogin": "2025-09-20T06:42:08.983Z",
+        "email": "naveen@startuptn.in",
+        "id": "68ce4cc17303db74a65f859a",
+        "sessions": []
+      },
+      "updatedBy": {
+        "createdAt": "2025-09-20T06:42:09.249Z",
+        "updatedAt": "2025-09-27T10:57:20.512Z",
+        "name": "Naveen",
+        "roles": ["admin", "user"],
+        "status": "active",
+        "lastLogin": "2025-09-20T06:42:08.983Z",
+        "email": "naveen@startuptn.in",
+        "id": "68ce4cc17303db74a65f859a",
+        "sessions": []
+      },
+      "log": {
+        "createdAt": "2025-09-24T07:05:50.846Z",
+        "updatedAt": "2025-09-24T07:05:50.846Z",
+        "version": 1
+      }
+    },
+    "filename": "futuristic-stage.png",
+    "mimeType": "image/png",
+    "filesize": 7030246,
+    "width": 3840,
+    "height": 2160,
+    "focalX": 50,
+    "focalY": 50,
+    "id": "68d3984e5d7167643e094c58",
+    "url": "https://dejqwog80n2lx.cloudfront.net/futuristic-stage.png",
+    "thumbnailURL": null
+  },
+  "about": "Speakers:\nOluwaseyi Abiodun Adepoju – Senior Consultant, Digital Trade & Investment, Office of Nigeria Digital Innovation (NITDA), Federal Ministry of Communications, Innovation and Digital Economy\nHeminda Nishan Jayaweera – Executive Director, TRACE Sri Lanka\n\nKwesi Junior Ofori – Founder & Executive Director, SME GrowAfrica LBG\n\nYamato Nakamoto – Global Manager, STARTUP HOKKAIDO / STEP SAPPORO\n\nThis session explores how cross-border collaboration is shaping the startup ecosystems of the future. It highlights global best practices, digital trade, and innovation hubs driving inclusive growth beyond geographical limits. Attendees will gain insights into building borderless networks, attracting international investment, and designing resilient ecosystems for 2030.",
+  "access_level": {
+    "createdAt": "2025-08-08T17:19:24.532Z",
+    "updatedAt": "2025-08-15T12:13:44.543Z",
+    "name": "Visitor & Delegate Pass",
+    "slug": "visitor-and-delegate-pass",
+    "external_integration": {},
+    "id": "6896319ceccaa2124765d825"
+  },
+  "id": "68d13564c75fa405fe97c45f"
+}

@@ -1,0 +1,359 @@
+{
+  "stakeholders": {
+    "startup": {
+      "profile_info": {
+        "profile_picture": "",
+        "name": "",
+        "gender": "",
+        "email": "",
+        "mobile_no": "",
+        "bio": "",
+        "country": "",
+        "state": "",
+        "city": "",
+        "linkedin": "",
+        "organisation_name": "",
+        "designation": ""
+      },
+      "organisation_profile": {
+        "logo": "",
+        "organisation_name": "",
+        "country": "",
+        "city": "",
+        "about": "",
+        "website": "",
+        "founding_year": "",
+        "linkedin": "",
+        "product_service_based": ["product", "service", "product_and_service"]
+      },
+      "offerings": [
+        "subsidized_rates",
+        "mentorship_advisory",
+        "workspace_labs_infra",
+        "investor_introductions",
+        "client_partner_connections",
+        "collaboration_opportunities",
+        "others"
+      ],
+      "incubated": false,
+      "business_model": ["B2B", "B2B2C", "B2C", "B2G", "D2C"],
+      "profile_type": "",
+      "sub_type": "",
+      "dpiit": {
+        "recognised": true,
+        "number": ""
+      },
+      "sector": "",
+      "stage": [
+        "ideation",
+        "validation",
+        "MVP",
+        "seed_stage",
+        "early_traction",
+        "growth_stage"
+      ],
+      "team_size": "",
+      "funding": [
+        "bootstrapped",
+        "<INR10L",
+        "10L-50L",
+        "50L-1Cr",
+        "1Cr-10Cr",
+        ">10Cr"
+      ],
+      "revenue": [
+        "pre_revenue",
+        "<INR10L",
+        "10L-50L",
+        "50L-1Cr",
+        "1Cr-10Cr",
+        ">10Cr"
+      ],
+      "pitch_deck": "",
+      "looking_for": [
+        "funding",
+        "mentorship",
+        "market_access_domestic",
+        "market_access_international",
+        "corporate_partnerships",
+        "government_procurement",
+        "incubation_acceleration",
+        "hiring_support",
+        "product_development",
+        "tech_infra_credits",
+        "legal_compliance_ip",
+        "manufacturing_support",
+        "certifications_licensing",
+        "import_export_support",
+        "marketing_pr",
+        "media_visibility",
+        "networking_community",
+        "others"
+      ]
+    },
+    "industry_corporate": {
+      "profile_info": {
+        "profile_picture": "",
+        "name": "",
+        "gender": "",
+        "email": "",
+        "mobile_no": "",
+        "bio": "",
+        "country": "",
+        "state": "",
+        "city": "",
+        "linkedin": "",
+        "organisation_name": "",
+        "designation": ""
+      },
+      "organisation_profile": {
+        "logo": "",
+        "organisation_name": "",
+        "country": "",
+        "city": "",
+        "about": "",
+        "website": "",
+        "founding_year": "",
+        "linkedin": "",
+        "product_service_based": ["product", "service", "product_and_service"]
+      },
+      "offerings": [
+        "pilot_projects",
+        "corporate_partnerships",
+        "infrastructure_access",
+        "mentorship_domain_expertise",
+        "supply_chain_access",
+        "CVC_investments",
+        "global_market_access",
+        "others"
+      ],
+      "profile_type": "",
+      "sector": "",
+      "looking_for": [
+        "access_innovative_startups",
+        "pilots_proof_of_concept",
+        "corporate_venture_investment",
+        "collaboration_with_incubators",
+        "co_development",
+        "skilled_talent_interns",
+        "CSR_social_impact",
+        "market_expansion_global",
+        "others"
+      ]
+    },
+    "mentor": {
+      "profile_info": {
+        "profile_picture": "",
+        "name": "",
+        "gender": "",
+        "email": "",
+        "mobile_no": "",
+        "bio": "",
+        "country": "",
+        "state": "",
+        "city": "",
+        "linkedin": "",
+        "organisation_name": "",
+        "designation": ""
+      },
+      "organisation_profile": {
+        "organisation_name": "",
+        "country": "",
+        "city": "",
+        "profile_type": "",
+        "sector": ""
+      },
+      "looking_for": [
+        "access_startups_for_mentorship",
+        "guide_growth_strategy_fundraising",
+        "networking_investors_founders",
+        "academic_research_collaboration",
+        "others"
+      ]
+    },
+    "ecosystem_partner": {
+      "profile_info": {
+        "profile_picture": "",
+        "name": "",
+        "gender": "",
+        "email": "",
+        "mobile_no": "",
+        "bio": "",
+        "country": "",
+        "state": "",
+        "city": "",
+        "linkedin": "",
+        "organisation_name": "",
+        "designation": ""
+      },
+      "organisation_profile": {
+        "logo": "",
+        "organisation_name": "",
+        "country": "",
+        "city": "",
+        "about": "",
+        "website": "",
+        "founding_year": "",
+        "linkedin": "",
+        "product_service_based": ["product", "service", "product_and_service"]
+      },
+      "offerings": [
+        "research_innovation_IP",
+        "training_workshops",
+        "talent_access",
+        "legal_financial_services",
+        "consulting_design_support",
+        "networking_forums",
+        "co_working_spaces",
+        "CSR_NGO_support",
+        "media_visibility",
+        "global_collaborations",
+        "others"
+      ],
+      "profile_type": "",
+      "sub_type": "",
+      "sector": "",
+      "looking_for": [
+        "access_startups_innovators",
+        "industry_government_collaborations",
+        "visibility_branding",
+        "deliver_services",
+        "R&D_partnerships",
+        "CSR_social_impact",
+        "networking_platforms",
+        "international_collaboration",
+        "others"
+      ]
+    },
+    "government": {
+      "profile_info": {
+        "profile_picture": "",
+        "name": "",
+        "gender": "",
+        "email": "",
+        "mobile_no": "",
+        "bio": "",
+        "country": "",
+        "state": "",
+        "city": "",
+        "linkedin": "",
+        "organisation_name": "",
+        "designation": ""
+      },
+      "organisation_profile": {
+        "logo": "",
+        "organisation_name": "",
+        "country": "",
+        "city": "",
+        "about": "",
+        "website": "",
+        "founding_year": "",
+        "linkedin": "",
+        "product_service_based": ["product", "service", "product_and_service"]
+      },
+      "offerings": [
+        "grants_subsidies",
+        "incubation_acceleration",
+        "policy_support",
+        "market_access",
+        "infrastructure_support",
+        "startup_awareness_campaigns",
+        "national_international_programs",
+        "others"
+      ],
+      "profile_type": "",
+      "sub_type": "",
+      "sector": "",
+      "looking_for": [
+        "connect_startups_for_schemes",
+        "corporate_partnerships",
+        "international_collaborations",
+        "policy_feedback",
+        "universities_R&D_linkages",
+        "global_trade_participation",
+        "public_sector_innovation",
+        "others"
+      ]
+    },
+    "investor": {
+      "profile_info": {
+        "profile_picture": "",
+        "name": "",
+        "gender": "",
+        "email": "",
+        "mobile_no": "",
+        "bio": "",
+        "country": "",
+        "state": "",
+        "city": "",
+        "linkedin": "",
+        "organisation_name": "",
+        "designation": ""
+      },
+      "organisation_profile": {
+        "logo": "",
+        "organisation_name": "",
+        "country": "",
+        "city": "",
+        "about": "",
+        "website": "",
+        "founding_year": "",
+        "linkedin": "",
+        "product_service_based": ["product", "service", "product_and_service"],
+        "offerings": [
+          "seed_early_growth_funding",
+          "mentorship_guidance",
+          "co_investment_syndication",
+          "portfolio_partnerships",
+          "industry_insights",
+          "scaling_support",
+          "global_investor_networks",
+          "others"
+        ]
+      },
+      "profile_type": "",
+      "sub_type": "",
+      "sector": "",
+      "stage": "",
+      "looking_for": [
+        "startup_deal_flow",
+        "co_investment_syndication",
+        "government_fund_of_funds",
+        "limited_partners",
+        "fundraising_support",
+        "corporate_partnerships_portfolio",
+        "market_access_support_portfolio",
+        "exit_opportunities",
+        "ecosystem_events_demo_days",
+        "incubator_accelerator_pipeline",
+        "others"
+      ],
+      "preferred_startup_profile": {
+        "ticket_size": ["5L-15L", "15L-1Cr", "1Cr-5Cr", ">5Cr"],
+        "revenue_stage": [
+          "pre_revenue",
+          "<INR10L",
+          "10L-50L",
+          "50L-1Cr",
+          "1Cr-10Cr",
+          ">10Cr"
+        ],
+        "funding_stage": [
+          "bootstrapped",
+          "<INR10L",
+          "10L-50L",
+          "50L-1Cr",
+          "1Cr-10Cr",
+          ">10Cr"
+        ],
+        "investment_instrument": [
+          "convertible_notes",
+          "debt",
+          "equity",
+          "open_to_all"
+        ],
+        "business_model": ["B2B", "B2B2C", "B2C", "B2G", "D2C"]
+      }
+    }
+  }
+}

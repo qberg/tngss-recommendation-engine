@@ -1,0 +1,19 @@
+fastapi
+uvicorn[standard]
+uvloop; sys_platform != 'win32'
+httptools
+pydantic
+pydantic-settings
+anyio
+motor
+aioredis
+httpx
+python-dotenv
+pytest
+pytest-asyncio
+asgi-lifespan
+black
+ruff
+ipython
+structlog
+pymongo

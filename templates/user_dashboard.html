@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+  <head>
+    <title>User Recommendation Dashboard</title>
+    <style>
+      body {
+        font-family: "Courier New", Courier, monospace;
+        margin: 0;
+        padding: 20px;
+        background-color: #fdfcf7;
+        color: #222;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #fff;
+        border: 2px solid #000;
+        padding: 20px;
+      }
+      .header {
+        background: #000;
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+      }
+      .content {
+        margin-top: 20px;
+      }
+      .user-info {
+        border: 2px solid #000;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      .section {
+        margin-bottom: 30px;
+      }
+      .section h3 {
+        border-bottom: 2px solid #000;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+      }
+      .text-preview {
+        background: #f4f4f4;
+        border: 1px solid #000;
+        padding: 10px;
+        margin: 8px 0;
+        font-size: 0.9em;
+      }
+      .event-card {
+        border: 2px solid #000;
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .score-high {
+        background: #dff0d8;
+      }
+      .score-medium {
+        background: #fcf8e3;
+      }
+      .score-low {
+        background: #f2dede;
+      }
+      .similarity-breakdown {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .similarity-score,
+      .final-score {
+        border: 1px solid #000;
+        padding: 5px 8px;
+        font-size: 0.85em;
+      }
+      .personal {
+        background: #bcdff1;
+      }
+      .organizational {
+        background: #d5f5d5;
+      }
+      .intent {
+        background: #fff5ba;
+      }
+      .final-score {
+        background: #d9b3ff;
+        font-weight: bold;
+      }
+      .event-title {
+        margin: 0 0 8px 0;
+        font-size: 1.1em;
+        font-weight: bold;
+      }
+      .event-meta {
+        font-size: 0.85em;
+        margin-bottom: 8px;
+      }
+      .event-about {
+        font-size: 0.9em;
+        margin-bottom: 10px;
+      }
+      .stats {
+        display: flex;
+        gap: 30px;
+        margin-top: 15px;
+      }
+      .stat {
+        text-align: center;
+      }
+      .stat-number {
+        font-size: 1.5em;
+        font-weight: bold;
+      }
+      .stat-label {
+        font-size: 0.85em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Recommendation Dashboard</h1>
+        <p>User ID: {{ data.user_id }}</p>
+      </div>
+
+      <div class="content">
+        <!-- User Info -->
+        <div class="user-info">
+          <h2>User Profile</h2>
+          <p><strong>Name:</strong> {{ data.user_data.name }}</p>
+          <p><strong>Designation:</strong> {{ data.user_data.designation }}</p>
+          <p>
+            <strong>Organization:</strong> {{ data.user_data.organization }}
+          </p>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-number">{{ data.event_scores|length }}</div>
+              <div class="stat-label">Events Scored</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">
+                {{ data.event_scores|selectattr('similarity_score', '>',
+                0.5)|list|length }}
+              </div>
+              <div class="stat-label">High Matches</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Profile Texts -->
+        <div class="section">
+          <h3>Generated Profile Texts</h3>
+
+          <h4>Personal Profile:</h4>
+          <div class="text-preview">{{ data.user_texts.personal }}</div>
+
+          <h4>Organizational Profile:</h4>
+          <div class="text-preview">{{ data.user_texts.organizational }}</div>
+
+          <h4>Intent Profile:</h4>
+          <div class="text-preview">{{ data.user_texts.intent }}</div>
+        </div>
+
+        <!-- Event Recommendations -->
+        <div class="section">
+          <h3>Event Recommendations</h3>
+
+          {% for score in data.event_scores %} {% set event =
+          data.event_details[score.target_id] %} {% set score_class =
+          "score-high" if score.similarity_score > 0.5 else "score-medium" if
+          score.similarity_score > 0.3 else "score-low" %}
+
+          <div class="event-card {{ score_class }}">
+            <h4 class="event-title">{{ event.title }}</h4>
+            <div class="event-meta">
+              <strong>Format:</strong> {{ event.format }}
+            </div>
+            <div class="event-about">
+              {{ event.about[:-1] }}{% if event.about|length > 200 %}...{% endif
+              %}
+            </div>
+
+            <div class="similarity-breakdown">
+              <div class="similarity-score personal">
+                Personal: {{ "%.3f"|format(score.similarity_breakdown.personal)
+                }}
+              </div>
+              <div class="similarity-score organizational">
+                Org: {{ "%.3f"|format(score.similarity_breakdown.org) }}
+              </div>
+              <div class="similarity-score intent">
+                Intent: {{ "%.3f"|format(score.similarity_breakdown.intent) }}
+              </div>
+              <div class="final-score">
+                Final: {{ "%.3f"|format(score.similarity_score) }}
+              </div>
+              <div class="final-score">
+                Percentage: {{ "%.3f"|format(score.percentage_score) }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

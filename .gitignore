@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+env/
+.env
+.env.local
+
+# FastAPI specific
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data files
+data/faiss_index/
+data/logs/
+*.log
+logs/
+
+# Development
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Performance profiling
+*.prof
