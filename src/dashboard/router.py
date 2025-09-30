@@ -4,7 +4,6 @@ from fastapi.templating import Jinja2Templates
 
 from src.dashboard.dependencies import get_dashboard_service
 from src.dashboard.service import DashboardService
-from src.recommendations.service import RecommendationService
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")

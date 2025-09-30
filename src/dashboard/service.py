@@ -15,7 +15,7 @@ class DashboardService:
 
         user_texts = self.rec_service.profile_service.create_all_texts(user_data)
 
-        event_scores = await self.rec_service.generate_event_scores_for_user(
+        event_scores = await self.rec_service.generate_event_scores_for_user_with_cache(
             user_id, max_events=-1, min_score=0.1
         )
 

@@ -15,12 +15,13 @@ from bson import ObjectId
 
 from src.config import settings
 from src.database import connect_to_mongo, get_database
-from src.recommendations.service import RecommendationService
+from src.events.client import EventsClient
+from src.events.service import EventService
 from src.utils.setup_logger import setup_logger
 from src.vector_store.config import vector_store_config
 from src.vector_store.exceptions import (InvalidEmbeddingDataError,
                                          VectorStoreError)
-from src.vector_store.schemas import UserEmbeddings
+from src.vector_store.schemas import EventEmbedding, UserEmbeddings
 
 logger = setup_logger(__name__, "logs/vector_store_service.log")
 
@@ -158,6 +159,55 @@ class VectorStoreService:
             logger.error("[FAILED] Error storing user embeddings")
             raise VectorStoreError(f"Failed to store user embeddings: {e}")
 
+    def store_event_embedding(
+        self,
+        event_id: str,
+        embedding: np.ndarray,
+        event_text: str,
+        api_updated_at: Optional[datetime] = None,
+    ) -> bool:
+        """Store single event embedding as pkl file"""
+        try:
+            if not event_id.strip():
+                raise InvalidEmbeddingDataError("Event ID cannot be empty")
+
+            if not event_text.strip():
+                raise InvalidEmbeddingDataError("Event text content cannot be empty")
+
+            if embedding.shape != (self.embedding_dimension,):
+                raise InvalidEmbeddingDataError(
+                    f"Embedding has shape {embedding.shape}, expected {self.embedding_dimension}"
+                )
+
+            text_hash = self._generate_text_hash(event_text)
+
+            event_embedding = EventEmbedding(
+                event_id=event_id,
+                embedding=embedding.tolist(),
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+                text_hash=text_hash,
+                api_updated_at=api_updated_at,
+            )
+
+            event_file = Path(self.events_embeddings_dir) / f"{event_id}.pkl"
+            temp_file = event_file.with_suffix(".tmp")
+
+            with open(temp_file, "wb") as f:
+                pickle.dump(event_embedding, f)
+
+            temp_file.replace(event_file)
+
+            logger.info(f"[SUCCESS] Stored event embedding: {event_id}")
+
+            return True
+
+        except (InvalidEmbeddingDataError, VectorStoreError):
+            raise
+        except Exception as e:
+            logger.error(f"[FAILED] Error storing event embedding for {event_id}: {e}")
+            raise VectorStoreError(f"Failed to store event emebedidng: {e}")
+
     def _read_user_embeddings_file(self, user_id: str) -> Optional[UserEmbeddings]:
         """
         Internal helper to read pickle file
@@ -173,6 +223,23 @@ class VectorStoreService:
 
         except (pickle.UnpicklingError, EOFError, OSError) as e:
             logger.error(f"[FAILED] Corrupted embedding file for {user_id[:8]}...: {e}")
+            return None
+
+    def _read_event_embedding_file(self, event_id: str) -> Optional[EventEmbedding]:
+        """
+        Internal helper to read pickle file
+        Corrupted files dont carsh service, we just can regenrate new files
+        """
+        try:
+            event_file = Path(self.events_embeddings_dir) / f"{event_id}.pkl"
+
+            if not event_file.exists():
+                return None
+            with open(event_file, "rb") as f:
+                return pickle.load(f)
+
+        except (pickle.UnpicklingError, EOFError, OSError) as e:
+            logger.error(f"[FAILED] Corrupted embedding file for {event_id}: {e}")
             return None
 
     def get_user_embeddings(self, user_id: str) -> Optional[Dict[str, np.ndarray]]:
@@ -203,6 +270,25 @@ class VectorStoreService:
             )
             raise VectorStoreError(f"Failed to retrieve user embeddings: {e}")
 
+    def get_event_embedding(self, event_id: str) -> Optional[np.ndarray]:
+        """Retrieve event embedding by event ID"""
+        try:
+            if not event_id.strip():
+                raise InvalidEmbeddingDataError("Event ID cannot be empty")
+
+            event_embedding = self._read_event_embedding_file(event_id)
+
+            if not event_embedding:
+                return None
+
+            logger.info(f"[SUCCESS] Retrieved event embedding of {event_id}")
+            return np.array(event_embedding.embedding)
+        except InvalidEmbeddingDataError:
+            raise
+        except Exception as e:
+            logger.error(f"[FAILED] Error retrieving event embedding for {event_id}")
+            raise VectorStoreError(f"Failed to retrieve event embedding: {e}")
+
     def get_user_embeddings_metadata(self, user_id: str) -> Optional[UserEmbeddings]:
         """Get user embeddings metadata for cache invalidation checking.
         Fails silenty by returning None in case metadata is corrupt
@@ -215,8 +301,19 @@ class VectorStoreService:
             raise
         except Exception as e:
             logger.error(f"[FAILED] Error retrieving metadata for {user_id}...: {e}")
+            return None
 
-        return self._read_user_embeddings_file(user_id)
+    def get_event_embedding_metadata(self, event_id: str) -> Optional[EventEmbedding]:
+        """Get event embedding metadata for cache validation."""
+        try:
+            if not event_id.strip():
+                raise InvalidEmbeddingDataError("Event ID cannot be empty")
+            return self._read_event_embedding_file(event_id)
+        except InvalidEmbeddingDataError:
+            raise
+        except Exception as e:
+            logger.error(f"[FAILED] Error retrieving metadata for {event_id}: {e}")
+            return None
 
     def _has_datetime_changes(
         self, stored_embeddings: UserEmbeddings, raw_data: Dict
@@ -288,7 +385,54 @@ class VectorStoreService:
             )
             return True, f"Error during check: {e}"
 
-    def user_embeddings_exist(self, user_id: str) -> bool:
+    def should_regenerate_event_embedding(
+        self,
+        event_id: str,
+        event_data: dict,
+        current_text: Optional[str] = None,
+        skip_content_check: bool = False,
+    ) -> Tuple[bool, str]:
+        """Check if event embedding needs regeneration."""
+        try:
+            stored_embedding = self.get_event_embedding_metadata(event_id)
+
+            if not stored_embedding:
+                return True, "No embedding exists"
+
+            api_updated_current = event_data.get("updatedAt")
+
+            api_updated_current_time = self._safe_get_updated_at(
+                {"updatedAt": api_updated_current}
+            )
+            if api_updated_current_time:
+                api_updated_stored_time = stored_embedding.api_updated_at
+                if (
+                    api_updated_stored_time
+                    and api_updated_current_time > api_updated_stored_time
+                ):
+                    logger.info(
+                        "[INFO] Need regeneration of embedding since the cms data has been updated"
+                    )
+                    return True, "Event collection timestamp changed"
+
+            if current_text and not skip_content_check:
+                current_text_hash = self._generate_text_hash(current_text)
+                stored_text_hash = stored_embedding.text_hash
+                if stored_text_hash != current_text_hash:
+                    logger.info(
+                        "[INFO] Content bases change detected, need to generate new embedding"
+                    )
+                    return True, "Content has changed"
+
+            return False, "No changes detected"
+
+        except Exception as e:
+            logger.error(
+                f"[FAILED] Error checking regeneration need for {event_id}: {e}"
+            )
+            return True, f"Error during check: {e}"
+
+    def user_embeddings_exists(self, user_id: str) -> bool:
         """Checks if user embeddings exists for a given user id."""
         try:
             if not user_id.strip():
@@ -298,7 +442,20 @@ class VectorStoreService:
 
         except Exception as e:
             logger.error(
-                f"[FAILED] Error checking embeddings existence for {user_id}: {e}"
+                f"[FAILED] Error checking embeddings existence for user with id {user_id}: {e}"
+            )
+            return False
+
+    def event_embedding_exists(self, event_id: str) -> bool:
+        """Check if event embedding exists."""
+        try:
+            if not event_id.strip():
+                return False
+            event_file = Path(self.events_embeddings_dir) / f"{event_id}.pkl"
+            return event_file.exists()
+        except Exception as e:
+            logger.error(
+                f"[FAILED] Error checking embedding existence for event with id {event_id}: {e}"
             )
             return False
 
@@ -319,9 +476,171 @@ class VectorStoreService:
             logger.error(f"[FAILED] Error deleting user embeddings for {user_id}: {e}")
             raise VectorStoreError(f"Failed to delete user embeddings: {e}")
 
+    def delete_event_embedding(self, event_id: str) -> bool:
+        """Delete event embedding"""
+        try:
+            if not event_id.strip():
+                raise InvalidEmbeddingDataError("Event ID cannot be empty")
+            event_file = Path(self.events_embeddings_dir) / f"{event_id}.pkl"
+            if event_file.exists():
+                event_file.unlink()
+                logger.info(f"[SUCCESS] Deleted event embedding for: {event_id}")
+                return True
+            return False
+        except InvalidEmbeddingDataError:
+            raise
+        except Exception as e:
+            logger.error(f"[FAILED] Error deleting event embedding for {event_id}: {e}")
+            raise VectorStoreError(f"Failed to delete event embedding: {e}")
+
+    def store_event_embeddings_batch(
+        self,
+        events_data: List[dict],
+        embeddings: List[np.ndarray],
+        events_texts: List[str],
+    ) -> Dict[str, bool]:
+        """Store multiple event embeddings at once."""
+        try:
+            if not (len(events_data) == len(embeddings) == len(events_texts)):
+                raise InvalidEmbeddingDataError(
+                    f"Length mismatch: events={len(events_data)}, "
+                    f"embeddings={len(embeddings)}, texts={len(events_texts)}"
+                )
+
+            if not events_data:
+                logger.warning(
+                    "[WARNING] Empty batch provided to store_event_embeddings_batch"
+                )
+                return {}
+
+            results = {}
+            success_count = 0
+            failure_count = 0
+
+            for event, embedding, text in zip(events_data, embeddings, events_texts):
+                event_id = event.get("id")
+                if not event_id:
+                    logger.warning("[WARNING] Event missing id field, skipping")
+                    failure_count += 1
+                    continue
+
+                try:
+                    success = self.store_event_embedding(
+                        event_id=event_id,
+                        embedding=embedding,
+                        event_text=text,
+                        api_updated_at=event.get("updatedAt"),
+                    )
+
+                    results[event_id] = success
+                    if success:
+                        success_count += 1
+                    else:
+                        failure_count += 1
+
+                except Exception as e:
+                    logger.error(f"[FAILED] Error storing event {event_id}: {e}")
+                    results[event_id] = False
+                    failure_count += 1
+
+            logger.info(
+                f"[SUCCESS] Batch store complete: {success_count} successful, "
+                f"{failure_count} failed out of {len(events_data)} total"
+            )
+
+            return results
+
+        except InvalidEmbeddingDataError:
+            raise
+        except Exception as e:
+            logger.error(f"[FAILED] Batch store operation failed: {e}")
+            raise VectorStoreError(f"Failed to store event embeddings batch: {e}")
+
+    def get_stale_event_ids(
+        self, events_data: List[dict], texts: Optional[List[str]] = None
+    ) -> List[str]:
+        """Return list of event IDs that need regeneration."""
+        try:
+            stale_ids = []
+            if not texts:
+                logger.info(
+                    "[INFO] No texts provided, checking only timestamp-based staleness"
+                )
+
+            if texts and (len(events_data) != len(texts)):
+                raise InvalidEmbeddingDataError(
+                    f"Length mismatch: events={len(events_data)}, texts={len(texts)}"
+                )
+
+            for index, event_data in enumerate(events_data):
+                event_id = event_data.get("id")
+                if not event_id:
+                    logger.warning("[WARNING] Event missing 'id' field, skipping")
+                    continue
+
+                current_text = texts[index] if texts else None
+
+                should_regen, _ = self.should_regenerate_event_embedding(
+                    event_id=event_id, event_data=event_data, current_text=current_text
+                )
+
+                if should_regen:
+                    stale_ids.append(event_id)
+
+            logger.info(
+                f"[INFO] Found {len(stale_ids)} stale events that need regenration"
+            )
+            return stale_ids
+
+        except InvalidEmbeddingDataError:
+            raise
+
+        except Exception as e:
+            logger.error(f"[FAILED] Error getting stale event IDs: {e}")
+            return []
+
+    def get_all_event_embeddings(
+        self, event_ids: List[str]
+    ) -> Dict[str, Optional[np.ndarray]]:
+        """Retrieve multiple event embeddings efficiently."""
+        try:
+            if not event_ids:
+                logger.warning("[WARNING] Empty event_ids list provided")
+                return {}
+            results = {}
+            found_count = 0
+            missing_count = 0
+
+            for event_id in event_ids:
+                try:
+                    embedding = self.get_event_embedding(event_id)
+                    results[event_id] = embedding
+
+                    if embedding is not None:
+                        found_count += 1
+                    else:
+                        missing_count += 1
+                except Exception as e:
+                    logger.error(f"[FAILED] Error retrieving event {event_id}: {e}")
+                    results[event_id] = None
+                    missing_count += 1
+
+            logger.info(
+                f"[SUCCESS] Batch retrieve complete: {found_count} found, "
+                f"{missing_count} missing out of {len(event_ids)} total"
+            )
+
+            return results
+
+        except Exception as e:
+            logger.error(f"[FAILED] Batch retrieve operation failed: {e}")
+            raise VectorStoreError(f"Failed to retrieve event embeddings batch: {e}")
+
 
 async def main():
     """Async integration test with real database data"""
+    from src.recommendations.service import RecommendationService
+
     user_id = None
     vector_store = None
 
@@ -445,7 +764,7 @@ async def main():
         print("+" * 100)
         print("TEST 6: Check Embeddings Exist")
         print("+" * 100)
-        exists = vector_store.user_embeddings_exist(user_id)
+        exists = vector_store.user_embeddings_exists(user_id)
         logger.info(f"[SUCCESS] Test 6: Exists = {exists}\n")
 
         # ============================================================
@@ -463,12 +782,94 @@ async def main():
         print("+" * 100)
         print("TEST 8: Verify Deletion")
         print("+" * 100)
-        exists_after = vector_store.user_embeddings_exist(user_id)
+        exists_after = vector_store.user_embeddings_exists(user_id)
         logger.info(f"[SUCCESS] Test 9: Exists after deletion = {exists_after}\n")
 
         print("+" * 100)
         print("ALL TESTS COMPLETED SUCCESSFULLY")
         print("+" * 100)
+
+        # ============================================================
+        # Test 9: Verify deletion
+        # ============================================================
+        event_client = EventsClient()
+        events = await event_client.get_all_public_events(batch_size=10)
+        if events:
+            event = events[0]
+            event_id = event.get("id")
+
+            if event_id:
+
+                print("+" * 100)
+                print("Test 9: Create event embedding")
+                print("+" * 100)
+                logger.info(f"Creating embeddings for event with id {event_id}")
+                event_text = EventService.format_event_for_embedding(event)
+                event_embedding = (
+                    await recommendation_service.embedding_service.create_embeddings(
+                        [event_text]
+                    )
+                )
+                success = vector_store.store_event_embedding(
+                    event_id=event_id,
+                    embedding=event_embedding[0],
+                    event_text=event_text,
+                    api_updated_at=event.get("updatedAt"),
+                )
+                logger.info(f"[SUCCESS] Test 10: Store event embedding: {success}")
+                print("+" * 100)
+                print("Test 10: Retrieve event embedding")
+                print("+" * 100)
+                retrieved = vector_store.get_event_embedding(event_id)
+                should_regen, reason = vector_store.should_regenerate_event_embedding(
+                    event_id, event, event_text
+                )
+                logger.info(f"Should regenerate: {should_regen} ({reason})")
+                logger.info(f"Retrieved event embedding: {retrieved is not None}")
+
+                vector_store.delete_event_embedding(event_id)
+
+            test_events = events[:3]
+            if len(test_events) >= 3:
+                logger.info(
+                    f"[***] Generating embeddings for {len(test_events)} events"
+                )
+                events_texts = EventService.format_events_for_embedding(test_events)
+                batch_embeddings = (
+                    await recommendation_service.embedding_service.create_embeddings(
+                        events_texts
+                    )
+                )
+                logger.info("[***] Testing batch store")
+                store_results = vector_store.store_event_embeddings_batch(
+                    events_data=test_events,
+                    embeddings=batch_embeddings,
+                    events_texts=events_texts,
+                )
+                logger.info(
+                    f"[SUCCESS] Batch store: {sum(store_results.values())}/{len(store_results)} successful"
+                )
+
+                logger.info("[***] Testing stale detection (should find none)")
+                stale_ids = vector_store.get_stale_event_ids(test_events, events_texts)
+                logger.info(f"[SUCCESS] Stale event IDs found: {len(stale_ids)}")
+
+                logger.info("[***] Testing batch retrieve")
+                event_ids = [e["id"] for e in test_events]
+                cached = vector_store.get_all_event_embeddings(event_ids)
+                found_count = sum(1 for v in cached.values() if v is not None)
+                logger.info(
+                    f"[SUCCESS] Batch retrieve: {found_count}/{len(cached)} found"
+                )
+
+                logger.info("[***] Cleaning up test events")
+                for event_id in event_ids:
+                    vector_store.delete_event_embedding(event_id)
+                logger.info("[SUCCESS] Test events cleaned up")
+            else:
+                logger.warning("[WARNING] Not enough events for batch testing")
+
+        await event_client.close()
 
     except Exception as e:
         logger.error(f"Vector Store Service test failed: {e}")
@@ -479,7 +880,7 @@ async def main():
             print("\n" + "+" * 100)
             print("FINAL CLEANUP")
             print("+" * 100)
-            if vector_store.user_embeddings_exist(user_id):
+            if vector_store.user_embeddings_exists(user_id):
                 vector_store.delete_user_embeddings(user_id)
                 logger.info("[INFO] Test data cleaned up")
 

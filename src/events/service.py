@@ -145,7 +145,7 @@ class EventService:
         return event_embedding_text
 
     @staticmethod
-    def fomrat_event_for_embedding(event_data: dict) -> str:
+    def format_event_for_embedding(event_data: dict) -> str:
         """Extract key info from raw event dict"""
         event = Event.from_api_response(event_data)
         return EventService.extract_event_info(event)

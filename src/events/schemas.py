@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -58,6 +59,8 @@ class Event(BaseModel):
     speakers: List[Speaker] = []
     tags: List[Tag] = []
     current_registerations: int = 0
+    updatedAt: Optional[datetime] = None
+    createdAt: Optional[datetime] = None
 
     @classmethod
     def from_api_response(cls, event_data: dict) -> "Event":
@@ -129,6 +132,8 @@ class Event(BaseModel):
             speakers=speakers,
             tags=tags,
             current_registerations=event_data.get("current_registerations", 0),
+            updatedAt=event_data.get("updatedAt"),
+            createdAt=event_data.get("createdAt"),
         )
 
 
@@ -144,7 +149,7 @@ if __name__ == "__main__":
 
         event = Event.from_api_response(sample_event_data)
         print("#" * 50)
-        print(f"Event: {event.speakers}")
+        print(f"Event: {event.updatedAt}")
         print("#" * 50)
     else:
         print("[FAILED] Sample event file not found for testing")

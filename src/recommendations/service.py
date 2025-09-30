@@ -3,18 +3,13 @@ Core recommendation service business logic for multi-vector matching system.
 """
 
 import asyncio
-import pickle
-import sys
 import time
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 from bson import ObjectId
 from pymongo.asynchronous.database import AsyncDatabase
 
-sys.path.append(str(Path(__file__).parent.parent))
 from src.config import settings
 from src.database import connect_to_mongo, get_database
 from src.embeddings.service import EmbeddingService
@@ -26,6 +21,7 @@ from src.profiles.schemas import (ContextBuilder, LoginInfo,
                                   OrganisationProfile, UserData, UserProfile)
 from src.profiles.service import ProfileService
 from src.utils.setup_logger import setup_logger
+from src.vector_store.service import VectorStoreService
 
 logger = setup_logger(__name__, "logs/recommendation_service.log")
 
@@ -107,9 +103,12 @@ class RecommendationService:
             )
             raise e
 
-    async def get_user_data(self, user_id: str) -> UserData:
+    async def get_user_data(
+        self, user_id: str, raw_data: Optional[Dict[str, Any]] = None
+    ) -> UserData:
         try:
-            raw_data = await self.get_raw_user_data(user_id)
+            if not raw_data:
+                raw_data = await self.get_raw_user_data(user_id)
 
             return UserData(
                 login=LoginInfo(**raw_data["login"]) if raw_data["login"] else None,
@@ -243,6 +242,145 @@ class RecommendationService:
             logger.error(f"[FAILED] Event recommendation generation failed: {e}")
             raise e
 
+    async def generate_event_scores_for_user_with_cache(
+        self, user_id: str, max_events: Optional[int] = None, min_score: float = 0.3
+    ) -> List[Dict[str, Any]]:
+        """Generate event recommendation scores for a user with caching."""
+        max_events = max_events or -1
+
+        try:
+            logger.info(f"[***] Generating event scores for user: {user_id}...")
+            vector_store = VectorStoreService()
+
+            user_embeddings = vector_store.get_user_embeddings(user_id)
+
+            if not user_embeddings:
+                logger.info(f"[INFO] No cached user embeddings, generating new ones")
+                raw_data = await self.get_raw_user_data(user_id)
+                user_data = await self.get_user_data(user_id, raw_data)
+                user_embeddings = await self.generate_user_embeddings(user_data)
+
+                texts = self.profile_service.create_all_texts(user_data)
+                vector_store.store_user_embeddings(
+                    user_id, user_embeddings, texts, raw_data
+                )
+            else:
+                logger.info(f"[INFO] Using cached user embeddings")
+
+            events_client = EventsClient()
+            events_data = await events_client.get_all_public_events(batch_size=10)
+
+            if not events_data:
+                logger.warning("No events found")
+                await events_client.close()
+                return []
+
+            events_texts = EventService.format_events_for_embedding(events_data)
+            stale_event_ids = vector_store.get_stale_event_ids(
+                events_data, events_texts
+            )
+
+            stale_embeddings_map = {}
+            if stale_event_ids:
+                logger.info(
+                    f"[INFO] Regenerating {len(stale_event_ids)} stale/missing event embeddings"
+                )
+
+                stale_events = [e for e in events_data if e["id"] in stale_event_ids]
+                stale_texts = [
+                    events_texts[i]
+                    for i, e in enumerate(events_data)
+                    if e["id"] in stale_event_ids
+                ]
+
+                stale_embeddings = await self.embedding_service.create_embeddings(
+                    stale_texts
+                )
+
+                vector_store.store_event_embeddings_batch(
+                    events_data=stale_events,
+                    embeddings=stale_embeddings,
+                    events_texts=stale_texts,
+                )
+
+                stale_embeddings_map = {
+                    event["id"]: embedding
+                    for event, embedding in zip(stale_events, stale_embeddings)
+                }
+            else:
+                logger.info("[INFO] All event embeddings are cached and fresh")
+
+            event_ids = [e["id"] for e in events_data]
+            cached_embeddings = vector_store.get_all_event_embeddings(event_ids)
+
+            for event_id, embedding in stale_embeddings_map.items():
+                cached_embeddings[event_id] = embedding
+
+            recommendation_scores = []
+            missing_embeddings = []
+
+            for event_data in events_data:
+                event_id = event_data["id"]
+                event_embedding = cached_embeddings.get(event_id)
+
+                if event_embedding is None:
+                    missing_embeddings.append(event_id)
+                    logger.warning(f"[WARNING] Missing embedding for event {event_id}")
+                    continue
+
+                similarity_result = (
+                    self.embedding_service.calculate_multi_vector_similarity(
+                        user_embeddings, event_embedding
+                    )
+                )
+
+                from src.events.schemas import Event
+
+                event = Event.from_api_response(event_data)
+
+                recommendation_scores.append(
+                    {
+                        "user_id": user_id,
+                        "target_id": event.id,
+                        "similarity_score": similarity_result.final_score,
+                        "similarity_breakdown": {
+                            "personal": similarity_result.personal,
+                            "org": similarity_result.org,
+                            "intent": similarity_result.intent,
+                        },
+                    }
+                )
+
+            if missing_embeddings:
+                logger.warning(
+                    f"[WARNING] Skipped {len(missing_embeddings)} events due to missing embeddings"
+                )
+
+            recommendation_scores.sort(
+                key=lambda x: x["similarity_score"], reverse=True
+            )
+            recommendation_scores = recommendation_scores[
+                : max_events if max_events > 0 else len(recommendation_scores)
+            ]
+
+            recommendation_scores = self.normalize_scores_to_percentage(
+                recommendation_scores
+            )
+
+            await events_client.close()
+
+            logger.info(
+                f"[SUCCESS] Generated {len(recommendation_scores)} event scores "
+                f"({len(stale_event_ids)} regenerated, "
+                f"{len(event_ids) - len(stale_event_ids)} cached)"
+            )
+
+            return recommendation_scores
+
+        except Exception as e:
+            logger.error(f"[FAILED] Event recommendation generation failed: {e}")
+            raise e
+
 
 async def main():
     try:
@@ -343,6 +481,12 @@ async def main():
                 logger.info("    ---")
         else:
             logger.info("[INFO] No event scores generated")
+
+        logger.info("[***] Testing cached event scoring")
+        cached_scores = await service.generate_event_scores_for_user_with_cache(
+            user_id, max_events=5
+        )
+        logger.info(f"[SUCCESS] Generated {len(cached_scores)} cached event scores")
 
         logger.info("[SUCCESS] All RecommendationService tests passed!")
 
