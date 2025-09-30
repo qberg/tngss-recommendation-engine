@@ -11,14 +11,21 @@ class DashboardService:
 
     async def get_user_dashboard_data(self, user_id: str) -> Dict[str, Any]:
         """Get all data needed for user dashboard"""
-        user_data = await self.rec_service.get_user_data(user_id)
 
-        user_texts = self.rec_service.profile_service.create_all_texts(user_data)
+        # Use UserEmbeddingService to get user data
+        user_data = await self.rec_service.user_service.get_user_data(user_id)
 
-        event_scores = await self.rec_service.generate_event_scores_for_user_with_cache(
-            user_id, max_events=-1, min_score=0.1
+        # Access profile_service through user_service
+        user_texts = self.rec_service.user_service.profile_service.create_all_texts(
+            user_data
         )
 
+        # Generate scores
+        event_scores = await self.rec_service.generate_event_scores_for_user_with_cache(
+            user_id, max_events=-1
+        )
+
+        # Fetch event details
         events_client = EventsClient()
         event_details = {}
 

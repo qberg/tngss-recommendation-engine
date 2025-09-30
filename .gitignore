@@ -26,5 +26,8 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Embeeddings
+data/embeddings/users
+
 # Performance profiling
 *.prof

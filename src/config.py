@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ORGANISATION_PROFILE_COLLECTION: str = "fake_organisation_profile_management"
     CONTEXT_BUILDER_COLLECTION: str = "fake_context_builder_management"
     EVENTS_COLLECTION: str = "events"
+    RECOMMENDATIONS_COLLECTION: str = "fake_ai_score"
 
     PAYLOAD_CMS_URL: str = "https://cms.tngss.startuptn.in/api"
 
