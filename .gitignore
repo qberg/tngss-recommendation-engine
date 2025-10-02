@@ -6,6 +6,7 @@ env/
 .env
 .env.local
 .env.development
+.env.*
 
 # FastAPI specific
 .pytest_cache/
