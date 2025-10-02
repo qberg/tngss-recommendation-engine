@@ -23,7 +23,6 @@ async def main():
         print("\n" + "=" * 60)
         print("TEST 1: Initialize Score Collection")
         print("=" * 60)
-        await service.score_service.initialize_collection()
 
         # Test 2: Get a test user
         print("\n" + "=" * 60)

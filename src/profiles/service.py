@@ -109,13 +109,15 @@ class ProfileService:
             num_tokens = num_tokens_from_string(personal_text)
 
             logger.info(
-                f"[SUCCESS] Personal text created [{len(personal_text)} chracters] [{num_tokens} tokens]"
+                f"[SUCCESS][ProfileService] Personal text created [{len(personal_text)} chracters] [{num_tokens} tokens]"
             )
 
             return personal_text
 
         except Exception as e:
-            logger.error(f"[FAILED] Personal text creation for embedding failed: {e}")
+            logger.error(
+                f"[FAILED][ProfileService] Personal text creation for embedding failed: {e}"
+            )
             return ""
 
     def create_org_text(self, user_data: UserData) -> str:
@@ -201,7 +203,7 @@ class ProfileService:
             num_tokens = num_tokens_from_string(org_text)
 
             logger.info(
-                f"[SUCCESS] Org text created [{len(org_text)} characters] [{num_tokens} tokens]"
+                f"[SUCCESS][ProfileService] Org text created [{len(org_text)} characters] [{num_tokens} tokens]"
             )
             return org_text
 
@@ -256,12 +258,12 @@ class ProfileService:
             num_tokens = num_tokens_from_string(intent_text)
 
             logger.info(
-                f"[SUCCESS] Intent text created [{len(intent_text)} characters] [{num_tokens} tokens]"
+                f"[SUCCESS][ProfileService] Intent text created [{len(intent_text)} characters] [{num_tokens} tokens]"
             )
             return intent_text
 
         except Exception as e:
-            logger.error(f"[FAILED] Failed to create intent text: {e}")
+            logger.error(f"[FAILED][ProfileService] Failed to create intent text: {e}")
             return "No explicit intent provided."
 
     def create_all_texts(self, user_data: UserData) -> List[str]:

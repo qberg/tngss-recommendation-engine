@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, List, Optional
 
 from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 PyObjectId = Annotated[ObjectId, Field(json_schema_extra={"type": "string"})]
 
@@ -10,7 +10,7 @@ PyObjectId = Annotated[ObjectId, Field(json_schema_extra={"type": "string"})]
 class LoginInfo(BaseModel):
     id: PyObjectId = Field(alias="_id")
     first_name: str
-    last_name: str
+    last_name: Optional[str] = None
     email_id: str
     phone_number: str
     organisation_profile_id: PyObjectId
@@ -84,6 +84,20 @@ class ContextBuilder(BaseModel):
     looking_to_meet: List[str] = []
     sector: List[str] = []
     is_deleted: bool = False
+
+    @field_validator("looking_to_connect", "looking_to_meet", "sector", mode="before")
+    @classmethod
+    def extract_values(cls, v):
+        if not v:
+            return []
+
+        if isinstance(v, list) and all(isinstance(item, str) for item in v):
+            return v
+
+        if isinstance(v, list) and all(isinstance(item, dict) for item in v):
+            return [item.get("value", item.get("label", "")) for item in v]
+
+        return v
 
     class Config:
         validate_by_name = True

@@ -1,5 +1,6 @@
 """Service for user embedding operations."""
 
+import asyncio
 import time
 from typing import Any, Dict, Optional
 
@@ -30,31 +31,49 @@ class UserEmbeddingService:
     async def get_raw_user_data(self, user_id: str) -> Dict[str, Any]:
         """Fetch user data across four collections."""
         try:
-            logger.info(f"[***] Fetching data for user: {user_id}")
+            logger.info(
+                f"[***][UserEmbeddingService - Data Fetcher] Fetching data for user: {user_id}"
+            )
             start_time = time.perf_counter()
 
             user_obj_id = ObjectId(user_id)
 
+            t1 = time.perf_counter()
             user = await self.db[settings.LOGIN_COLLECTION].find_one(
                 {"_id": user_obj_id}
             )
+            login_time = (time.perf_counter() - t1) * 1000
+            logger.info(f"[TIMING] Login query: {login_time:.2f}ms")
+
             if not user:
                 raise ValueError(f"User not found: {user_id}")
 
             org_id = user.get("organisation_profile_id")
 
-            profile = await self.db[settings.USERS_PROFILE_COLLECTION].find_one(
+            t2 = time.perf_counter()
+
+            profile_task = self.db[settings.USERS_PROFILE_COLLECTION].find_one(
                 {"user_id": user_obj_id}
             )
-            org = (
-                await self.db[settings.ORGANISATION_PROFILE_COLLECTION].find_one(
+
+            context_task = self.db[settings.CONTEXT_BUILDER_COLLECTION].find_one(
+                {"user_id": user_obj_id}
+            )
+            if org_id:
+                org_task = self.db[settings.ORGANISATION_PROFILE_COLLECTION].find_one(
                     {"_id": org_id}
                 )
-                if org_id
-                else {}
-            )
-            context = await self.db[settings.CONTEXT_BUILDER_COLLECTION].find_one(
-                {"user_id": user_obj_id}
+
+                profile, org, context = await asyncio.gather(
+                    profile_task, org_task, context_task
+                )
+            else:
+                profile, context = await asyncio.gather(profile_task, context_task)
+                org = {}
+
+            parallel_time = (time.perf_counter() - t2) * 1000
+            logger.info(
+                f"[TIMING] Parallel queries (3 collections): {parallel_time:.2f}ms"
             )
 
             end_time = time.perf_counter()
@@ -102,7 +121,9 @@ class UserEmbeddingService:
     ) -> Dict[str, np.ndarray]:
         """Generate all 3 embeddings for a user (personal, org, intent)."""
         try:
-            logger.info("[***] Generating all three embeddings of a user")
+            logger.info(
+                "[***][UserEmbeddingService Generate User Embeddings] Generating all three embeddings of a user"
+            )
 
             texts = self.profile_service.create_all_texts(user_data)
             embeddings = await self.embedding_service.create_embeddings(texts)
@@ -135,7 +156,7 @@ class UserEmbeddingService:
 
                     if not should_regen:
                         logger.info(
-                            f"[INFO] Using cached embeddings for user {user_id[:8]}"
+                            f"[INFO][UserEmbeddingService] Using cached embeddings for user {user_id}"
                         )
                         return cached_embeddings
 
@@ -143,7 +164,9 @@ class UserEmbeddingService:
                         f"[INFO] Cache invalid for user {user_id[:8]}: {reason}"
                     )
 
-            logger.info(f"[***] Generating new embeddings for user {user_id[:8]}")
+            logger.info(
+                f"[***][UserEmbeddingService] Generating new embeddings for user {user_id}"
+            )
             raw_data = await self.get_raw_user_data(user_id)
 
             if not any(raw_data.values()):

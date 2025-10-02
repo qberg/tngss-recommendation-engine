@@ -30,7 +30,9 @@ class EmbeddingService:
 
         embeddings = await self.client.create_embeddings(processed_texts)
 
-        logger.info(f"[SUCCESS] Created {len(embeddings)} embeddings")
+        logger.info(
+            f"[SUCCESS][Pure EmbeddingService] Created {len(embeddings)} embeddings"
+        )
         return embeddings
 
     def calculate_similarity(

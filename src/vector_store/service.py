@@ -365,6 +365,7 @@ class VectorStoreService:
     ) -> Tuple[bool, str]:
         """Hybrid cache invalidation: check both datetime and content changes."""
         try:
+            logger.info(f"[INFO] Cache validation for {user_id} triggered")
             stored_embeddings = self.get_user_embeddings_metadata(user_id)
 
             if not stored_embeddings:
@@ -381,7 +382,7 @@ class VectorStoreService:
 
         except Exception as e:
             logger.error(
-                f"[FAILED] Error checking regeneration need for {user_id[:8]}...: {e}"
+                f"[FAILED] Error checking regeneration need for {user_id}...: {e}"
             )
             return True, f"Error during check: {e}"
 

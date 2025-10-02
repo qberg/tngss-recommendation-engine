@@ -1,6 +1,8 @@
+from enum import unique
+from os import name
 from typing import Dict, Optional
 
-from pymongo import AsyncMongoClient
+from pymongo import ASCENDING, DESCENDING, AsyncMongoClient, IndexModel
 from pymongo.asynchronous import database
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
@@ -34,10 +36,90 @@ class MongoDB:
 mongodb = MongoDB()
 
 
+async def initialize_indexes():
+    """
+    Create all necessary indexes for the recommendation system.
+    Called automatically on startup. Idempotent - safe to run multiple times.
+    """
+    try:
+        db = mongodb.get_database()
+        logger.info("[***] Initializing database indexes...")
+
+        await db[settings.USERS_PROFILE_COLLECTION].create_index(
+            [("user_id", ASCENDING)], name="idx_user_profile_user_id", unique=True
+        )
+        logger.info(
+            f"[SUCCESS] Index created on {settings.USERS_PROFILE_COLLECTION}.user_id"
+        )
+
+        await db[settings.CONTEXT_BUILDER_COLLECTION].create_index(
+            [("user_id", ASCENDING)], name="idx_context_user_id", unique=True
+        )
+        logger.info(
+            f"[SUCCESS] Index created on {settings.CONTEXT_BUILDER_COLLECTION}.user_id"
+        )
+
+        recommendation_indexes = [
+            IndexModel(
+                [
+                    ("user_id", ASCENDING),
+                    ("reference_type", ASCENDING),
+                    ("updated_at", DESCENDING),
+                ],
+                name="user_ref_type_updated_idx",
+            ),
+            IndexModel(
+                [
+                    ("user_id", ASCENDING),
+                    ("reference_type", ASCENDING),
+                    ("score", DESCENDING),
+                ],
+                name="user_ref_type_score_idx",
+            ),
+            IndexModel(
+                [
+                    ("user_id", ASCENDING),
+                    ("reference_id", ASCENDING),
+                    ("reference_type", ASCENDING),
+                ],
+                name="user_ref_unique_idx",
+                unique=True,
+            ),
+        ]
+
+        await db[settings.RECOMMENDATIONS_COLLECTION].create_indexes(
+            recommendation_indexes
+        )
+        logger.info(
+            f"[SUCCESS] Indexes created on {settings.RECOMMENDATIONS_COLLECTION}"
+        )
+        for collection_name in [
+            settings.USERS_PROFILE_COLLECTION,
+            settings.CONTEXT_BUILDER_COLLECTION,
+            settings.RECOMMENDATIONS_COLLECTION,
+        ]:
+            indexes = await db[collection_name].index_information()
+            logger.info(f"[INDEXES] {collection_name}: {list(indexes.keys())}")
+
+        logger.info("[SUCCESS] All indexes initialized")
+        return True
+
+    except Exception as e:
+        logger.error(f"[FAILED] Error initializing indexes: {e}")
+        return False
+
+
 async def connect_to_mongo():
     """Create database connection"""
     try:
-        mongodb.client = AsyncMongoClient(settings.MONGODB_URL)
+        mongodb.client = AsyncMongoClient(
+            settings.MONGODB_URL,
+            maxPoolSize=50,
+            minPoolSize=10,
+            maxIdleTimeMS=45000,
+            connectTimeoutMS=30000,
+            serverSelectionTimeoutMS=5000,
+        )
         mongodb.database = mongodb.client[settings.DATABASE_NAME]
 
         # Test the connection
@@ -45,6 +127,7 @@ async def connect_to_mongo():
         logger.info(
             f"[SUCCESS] Successfully connected to MongoDB: {settings.DATABASE_NAME}"
         )
+        await initialize_indexes()
 
     except ConnectionFailure as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
@@ -67,22 +150,18 @@ async def inspect_collection_schema(collection_name: str) -> Dict[str, str]:
     """Inspect schema of a collection by sampling documents"""
     try:
         db = get_database()
-
         sample = await db[collection_name].find_one({})
         if not sample:
             logger.warning(f"No documents found in {collection_name}")
             return {}
-
         schema = {}
         for key, value in sample.items():
             if value is None:
                 schema[key] = "Optional"
             else:
                 schema[key] = type(value).__name__
-
         logger.info(f"[INFO] {collection_name}: {len(schema)} fields")
         return schema
-
     except Exception as e:
         logger.error(f"Schema inspection failed for {collection_name}: {e}")
         return {}

@@ -4,17 +4,15 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from src.dashboard.router import router as dashboard_router
-from src.database import connect_to_mongo
-
-# Add other routers as you create them
-# from src.recommendations.router import router as recommendations_router
+from src.database import close_mongo_connection, connect_to_mongo
+from src.recommendations.router import router as recommendations_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     await connect_to_mongo()
     yield
+    await close_mongo_connection()
 
 
 # Create FastAPI app
@@ -27,17 +25,18 @@ app = FastAPI(
 
 # Include routers
 app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
-
-# Add other routers here as needed
-# app.include_router(recommendations_router, prefix="/api/recommendations", tags=["recommendations"])
-
-# Mount static files if you need them later
-# app.mount("/static", StaticFiles(directory="static"), name="static")
+app.include_router(
+    recommendations_router, prefix="/recommendations", tags=["recommendations"]
+)
 
 
 @app.get("/")
 async def root():
-    return {"message": "Recommendation Service API", "dashboard": "/dashboard"}
+    return {
+        "message": "Recommendation Service API",
+        "dashboard": "/dashboard",
+        "recommendations": "/recommendations",
+    }
 
 
 @app.get("/health")
