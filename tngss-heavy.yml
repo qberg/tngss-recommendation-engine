@@ -1,0 +1,143 @@
+config:
+  target: "https://tngss.startuptn.in"
+  phases:
+    # Phase 1: Warm up
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up - 10 users/sec"
+
+    # Phase 2: Ramp to 100
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 100
+      name: "Ramp to 100 users/sec"
+
+    # Phase 3: Sustain 100
+    - duration: 180
+      arrivalRate: 100
+      name: "Sustain 100 users/sec"
+
+    # Phase 4: Ramp to 250
+    - duration: 120
+      arrivalRate: 100
+      rampTo: 250
+      name: "Ramp to 250 users/sec"
+
+    # Phase 5: Sustain 250
+    - duration: 180
+      arrivalRate: 250
+      name: "Sustain 250 users/sec"
+
+    # Phase 6: Ramp to 500
+    - duration: 120
+      arrivalRate: 250
+      rampTo: 500
+      name: "Ramp to 500 users/sec"
+
+    # Phase 7: Sustain 500
+    - duration: 180
+      arrivalRate: 500
+      name: "Sustain 500 users/sec"
+
+    # Phase 8: Ramp to 750
+    - duration: 120
+      arrivalRate: 500
+      rampTo: 750
+      name: "Ramp to 750 users/sec"
+
+    # Phase 9: Sustain 750
+    - duration: 120
+      arrivalRate: 750
+      name: "Sustain 750 users/sec"
+
+    # Phase 10: Final push to 1000
+    - duration: 120
+      arrivalRate: 750
+      rampTo: 1000
+      name: "Ramp to 1000 users/sec"
+
+    # Phase 11: Sustain 1000 (the big test!)
+    - duration: 180
+      arrivalRate: 1000
+      name: "SUSTAIN 1000 USERS/SEC"
+
+    # Phase 12: Cool down
+    - duration: 60
+      arrivalRate: 100
+      name: "Cool down"
+
+  # Performance thresholds (may need to adjust these)
+  ensure:
+    maxErrorRate: 5 # Allow up to 5% errors at peak load
+    p95: 5000 # 95% under 5 seconds
+    p99: 10000 # 99% under 10 seconds
+
+  # HTTP settings for high concurrency
+  http:
+    timeout: 30
+    maxSockets: 500 # Increase socket pool
+
+  headers:
+    User-Agent: "Artillery Heavy Load Test"
+    Accept: "text/html,application/xhtml+xml"
+    Connection: "keep-alive"
+
+scenarios:
+  # Scenario 1: Homepage (most common)
+  - name: "Homepage visitor"
+    weight: 30
+    flow:
+      - get:
+          url: "/home"
+      - think: 1
+
+  # Scenario 2: Quick navigation
+  - name: "Quick browser"
+    weight: 25
+    flow:
+      - get:
+          url: "/home"
+      - think: 1
+      - get:
+          url: "/speakers"
+      - think: 1
+
+  # Scenario 3: Event info seeker
+  - name: "Event researcher"
+    weight: 20
+    flow:
+      - get:
+          url: "/about"
+      - think: 1
+      - get:
+          url: "/agenda"
+      - think: 1
+      - get:
+          url: "/venue"
+
+  # Scenario 4: Sponsor interest
+  - name: "Sponsor journey"
+    weight: 10
+    flow:
+      - get:
+          url: "/why-sponsor"
+      - think: 2
+      - get:
+          url: "/sponsors"
+
+  # Scenario 5: Exhibitor check
+  - name: "Exhibitor browser"
+    weight: 8
+    flow:
+      - get:
+          url: "/exhibitors"
+      - think: 1
+      - get:
+          url: "/tickets"
+
+  # Scenario 6: Simple bounce
+  - name: "Bouncer"
+    weight: 7
+    flow:
+      - get:
+          url: "/"

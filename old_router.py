@@ -5,16 +5,14 @@ from typing import List
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from celery.result import AsyncResult
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import (APIRouter, BackgroundTasks, Depends, HTTPException, Path,
+                     Query)
 from pymongo.asynchronous.database import AsyncDatabase
 
 from src.config import settings
 from src.database import get_database
-from src.recommendations.celery_config import celery_app
 from src.recommendations.schemas import (CalculateStatusResponse,
-                                         RecommendationResponse,
-                                         TaskStatusResponse)
+                                         RecommendationResponse)
 from src.recommendations.service import RecommendationService
 from src.recommendations.tasks import calculate_user_recommendations
 from src.utils.setup_logger import setup_logger
@@ -81,6 +79,7 @@ async def get_user_event_recommendations(
     summary="Calculate event recommendations in background",
 )
 async def calculate_user_event_recommendations(
+    background_tasks: BackgroundTasks,
     user_id: str = Path(..., description="User ID"),
     force_recalculate: bool = Query(
         default=False, description="Force recalculation of all events and user scores"
@@ -154,18 +153,25 @@ async def calculate_user_event_recommendations(
                     )
                     force_user_regenerate = True
 
+        # Add to background tasks
+        background_tasks.add_task(
+            _calculate_and_store_background,
+            user_id,
+            db,
+            force_recalculate,
+            force_user_regenerate,
+        )
+
         # Queue Celery task
-        task = calculate_user_recommendations.apply_async(  # type: ignore[attr-defined]
+        task = calculate_user_recommendations.apply_async(
             args=[user_id, force_recalculate, force_user_regenerate]
         )
 
-        logger.info(f"[API] Celery task {task.id} queued for user {user_id}")
-
+        logger.info(f"[API] Background calculation started for user {user_id}")
         return {
             "success": True,
-            "message": "Calculation queued. Check status endpoint.",
+            "message": "Calculation started in background. Check GET endpoint in a few seconds.",
             "user_id": user_id,
-            "task_id": task.id,
             "cache_hit": False,
         }
 
@@ -176,40 +182,52 @@ async def calculate_user_event_recommendations(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-#######################################################################
-## Task Status
-#######################################################################
-@router.get(
-    "/task/{task_id}/status",
-    response_model=TaskStatusResponse,
-    summary="Check Celery task status",
-)
-async def check_task_status(task_id: str = Path(..., description="Celery task ID")):
-    """Check the status of a recommendation calculation task."""
+# ============================================================================
+# Background worker function
+# ============================================================================
+async def _calculate_and_store_background(
+    user_id: str,
+    db: AsyncDatabase,
+    force_recalculate: bool = False,
+    force_user_regenerate: bool = False,
+):
+    """Execute recommendation calculation in background."""
     try:
-        task = AsyncResult(task_id, app=celery_app)
+        logger.info(f"[BG] Starting calculation for user {user_id}")
+        start_time = datetime.now()
 
-        if task.state == "PENDING":
-            return {
-                "task_id": task_id,
-                "status": "pending",
-                "message": "Task is waiting in queue",
-            }
-        elif task.state == "PROGRESS":
-            return {
-                "task_id": task_id,
-                "status": "processing",
-                "progress": task.info.get("current", 0),
-                "total": task.info.get("total", 100),
-                "message": task.info.get("status", "Processing..."),
-            }
-        elif task.state == "SUCCESS":
-            return {"task_id": task_id, "status": "completed", "result": task.result}
-        elif task.state == "FAILURE":
-            return {"task_id": task_id, "status": "failed", "error": str(task.info)}
+        service = RecommendationService(db)
+        if force_recalculate:
+            logger.info(f"[BG] Force mode: regenerating all embeddings for {user_id}")
+            scores = await service.generate_event_scores_for_user_with_cache(
+                user_id, max_events=-1
+            )
         else:
-            return {"task_id": task_id, "status": task.state.lower()}
+            if force_user_regenerate:
+                logger.info(f"[BG] Fast mode: generating new emneddings for {user_id}")
+            else:
+                logger.info(f"[BG] Fast mode: using cached embeddings for {user_id}")
+            scores = await service.generate_event_scores_for_user_fast(
+                user_id, max_events=-1, force_user_regenerate=force_user_regenerate
+            )
+
+        if not scores:
+            logger.warning(f"[BG] No scores generated for user {user_id}")
+            return
+
+        # Store in database
+        success = await service.store_scores_to_database(scores)
+
+        if success:
+            elapsed = (datetime.now() - start_time).total_seconds()
+            logger.info(
+                f"[BG] Completed for user {user_id}: "
+                f"{len(scores)} scores stored in {elapsed:.2f}s"
+            )
+        else:
+            logger.error(f"[BG] Failed to store scores for user {user_id[:8]}")
 
     except Exception as e:
-        logger.error(f"[API] Error checking task status: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(
+            f"[BG] Background calculation failed for {user_id[:8]}: {e}", exc_info=True
+        )

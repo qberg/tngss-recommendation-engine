@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 
 from src.dashboard.router import router as dashboard_router
 from src.database import close_mongo_connection, connect_to_mongo

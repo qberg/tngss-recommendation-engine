@@ -1,0 +1,215 @@
+config:
+  target: "https://tngss.startuptn.in"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 2
+      name: "Warm up"
+
+    # Gradual ramp up
+    - duration: 180
+      arrivalRate: 2
+      rampTo: 15
+      name: "Ramp up to 15 users/sec"
+
+    # Sustained load
+    - duration: 300
+      arrivalRate: 15
+      name: "Sustained load - 15 users/sec"
+
+    # Spike test
+    - duration: 120
+      arrivalRate: 30
+      name: "Spike - 30 users/sec"
+
+    # Cool down
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool down"
+
+  ensure:
+    maxErrorRate: 2
+    p95: 2000
+    p99: 5000
+
+  http:
+    timeout: 30
+
+  headers:
+    User-Agent: "Artillery Load Test"
+    Accept: "text/html,application/xhtml+xml,application/xml"
+
+scenarios:
+  # Scenario 1: Homepage visitor (highest traffic)
+  - name: "Homepage browsing"
+    weight: 25
+    flow:
+      - get:
+          url: "/home"
+          expect:
+            - statusCode: 200
+      - think: 3
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Information seeker
+  - name: "About and Why TN"
+    weight: 15
+    flow:
+      - get:
+          url: "/home"
+      - think: 2
+      - get:
+          url: "/about"
+          expect:
+            - statusCode: 200
+      - think: 4
+      - get:
+          url: "/why-tn"
+          expect:
+            - statusCode: 200
+      - think: 3
+      - get:
+          url: "/faq"
+          expect:
+            - statusCode: 200
+
+  # Scenario 3: Event attendee research
+  - name: "Attendee journey"
+    weight: 20
+    flow:
+      - get:
+          url: "/home"
+      - think: 2
+      - get:
+          url: "/why-attend"
+          expect:
+            - statusCode: 200
+      - think: 5
+      - get:
+          url: "/speakers"
+          expect:
+            - statusCode: 200
+      - think: 4
+      - get:
+          url: "/agenda"
+          expect:
+            - statusCode: 200
+      - think: 3
+      - get:
+          url: "/venue"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/tickets"
+          expect:
+            - statusCode: 200
+
+  # Scenario 4: Sponsor interest
+  - name: "Potential sponsor"
+    weight: 10
+    flow:
+      - get:
+          url: "/home"
+      - think: 2
+      - get:
+          url: "/why-sponsor"
+          expect:
+            - statusCode: 200
+      - think: 5
+      - get:
+          url: "/sponsors"
+          expect:
+            - statusCode: 200
+      - think: 3
+      - get:
+          url: "/sponsor-form"
+          expect:
+            - statusCode: 200
+
+  # Scenario 5: Exhibitor exploration
+  - name: "Exhibitor browser"
+    weight: 10
+    flow:
+      - get:
+          url: "/home"
+      - think: 2
+      - get:
+          url: "/exhibitors"
+          expect:
+            - statusCode: 200
+      - think: 4
+      - get:
+          url: "/tickets"
+          expect:
+            - statusCode: 200
+
+  # Scenario 6: Speaker page deep dive
+  - name: "Speaker enthusiast"
+    weight: 8
+    flow:
+      - get:
+          url: "/speakers"
+      - think: 3
+      # Note: We can't test dynamic routes without actual slugs
+      # If you have actual speaker slugs, add them here
+      - get:
+          url: "/agenda"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/venue"
+          expect:
+            - statusCode: 200
+
+  # Scenario 7: Media interest
+  - name: "Media personnel"
+    weight: 5
+    flow:
+      - get:
+          url: "/home"
+      - think: 2
+      - get:
+          url: "/about"
+          expect:
+            - statusCode: 200
+      - think: 3
+      - get:
+          url: "/speakers"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/media-form"
+          expect:
+            - statusCode: 200
+
+  # Scenario 8: Legal/compliance check
+  - name: "Policy reader"
+    weight: 3
+    flow:
+      - get:
+          url: "/privacy-policy"
+          expect:
+            - statusCode: 200
+      - think: 5
+      - get:
+          url: "/terms-and-condition"
+          expect:
+            - statusCode: 200
+
+  # Scenario 9: Quick bounce (realistic behavior)
+  - name: "Quick visitor"
+    weight: 4
+    flow:
+      - get:
+          url: "/home"
+      - think: 1
+      - get:
+          url: "/about"
+          expect:
+            - statusCode: 200

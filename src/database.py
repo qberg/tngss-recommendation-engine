@@ -46,14 +46,14 @@ async def initialize_indexes():
         logger.info("[***] Initializing database indexes...")
 
         await db[settings.USERS_PROFILE_COLLECTION].create_index(
-            [("user_id", ASCENDING)], name="idx_user_profile_user_id", unique=True
+            [("user_id", ASCENDING)], name="user_id_1", unique=True
         )
         logger.info(
             f"[SUCCESS] Index created on {settings.USERS_PROFILE_COLLECTION}.user_id"
         )
 
         await db[settings.CONTEXT_BUILDER_COLLECTION].create_index(
-            [("user_id", ASCENDING)], name="idx_context_user_id", unique=True
+            [("user_id", DESCENDING)], name="user_id_-1", unique=True
         )
         logger.info(
             f"[SUCCESS] Index created on {settings.CONTEXT_BUILDER_COLLECTION}.user_id"

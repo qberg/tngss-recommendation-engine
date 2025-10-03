@@ -29,6 +29,7 @@ class CalculateStatusResponse(BaseModel):
     success: bool
     message: str
     user_id: str
+    task_id: Optional[str] = None
     cache_hit: bool
     last_calculated: Optional[str] = None
 
@@ -39,5 +40,28 @@ class CalculateStatusResponse(BaseModel):
                 "message": "Calculation started in background",
                 "user_id": "507f1f77bcf86cd799439011",
                 "cache_hit": False,
+            }
+        }
+
+
+class TaskStatusResponse(BaseModel):
+    """Response for task status check."""
+
+    task_id: str
+    status: str
+    message: Optional[str] = None
+    progress: Optional[int] = None
+    total: Optional[int] = None
+    result: Optional[dict] = None
+    error: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "task_id": "abc-123-def",
+                "status": "processing",
+                "progress": 50,
+                "total": 100,
+                "message": "Generating embeddings...",
             }
         }
