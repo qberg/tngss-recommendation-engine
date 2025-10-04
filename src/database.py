@@ -3,8 +3,6 @@ from os import name
 from typing import Dict, Optional
 
 from pymongo import ASCENDING, DESCENDING, AsyncMongoClient, IndexModel
-from pymongo.asynchronous import database
-from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import ConnectionFailure
 

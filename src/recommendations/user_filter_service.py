@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.asynchronous.database import AsyncDatabase
 
 from src.config import settings
+from src.recommendations.pipelines import candidate_match_pipeline
 from src.recommendations.utils import normalize_value
 from src.utils.setup_logger import setup_logger
 
@@ -142,61 +143,35 @@ class UserFilterService:
             user_type = user_criteria["profile_type"]
             user_wants = user_criteria["looking_to_connect"]
 
-            user_obj_id = ObjectId(user_id)
-
             logger.info(f"[{method}] [***] Finding compatible candidates for {user_id}")
 
             t1 = time.perf_counter()
-
-            ## Find users with overlapping sectors
-            context_candidates = (
-                await self.db[settings.CONTEXT_BUILDER_COLLECTION]
-                .find(
-                    {
-                        "user_id": {"$ne": user_obj_id},
-                        "sector.value": {"$in": user_sectors},
-                    }
-                )
-                .to_list(length=None)
+            pipeline = candidate_match_pipeline(
+                user_id=user_id, user_sectors=user_sectors
             )
+
+            cursor = await self.db[settings.CONTEXT_BUILDER_COLLECTION].aggregate(
+                pipeline
+            )
+            candidates = await cursor.to_list(length=None)
 
             query_time = (time.perf_counter() - t1) * 1000
             logger.info(
-                f"[{method}] [TIMING] Context query: {query_time:.2f}ms, found {len(context_candidates)} candidates"
+                f"[{method}] [TIMING] Aggregation pipeline: {query_time:.2f}ms, "
+                f"found {len(candidates)} candidates"
             )
-
-            ## Filter by complementarity
-            candidate_user_ids = [c["user_id"] for c in context_candidates]
-
-            # Fetch org data for potential candidates matching the sector goals
-            t2 = time.perf_counter()
-            org_candidates = (
-                await self.db[settings.ORGANISATION_PROFILE_COLLECTION]
-                .find({"user_id": {"$in": candidate_user_ids}})
-                .to_list(length=None)
-            )
-
-            org_query_time = (time.perf_counter() - t2) * 1000
-            logger.info(f"[{method}] [TIMING] Org query: {org_query_time:.2f}ms")
-
-            org_map = {str(org["user_id"]): org for org in org_candidates}
 
             compatible_ids = []
 
-            for context in context_candidates:
-                candidate_id = str(context["user_id"])
-                candidate_org = org_map.get(candidate_id)
+            for candidate in candidates:
+                candidate_type = normalize_value(candidate.get("profile_type"))
 
-                if not candidate_org:
-                    continue
-
-                candidate_type = normalize_value(candidate_org.get("profile_type"))
                 if not candidate_type:
                     continue
 
                 candidate_wants = []
-                if context.get("looking_to_connect"):
-                    for item in context["looking_to_connect"]:
+                if candidate.get("looking_to_connect"):
+                    for item in candidate["looking_to_connect"]:
                         if isinstance(item, dict):
                             value = item.get("value") or item.get("label", "")
                         else:
@@ -210,7 +185,7 @@ class UserFilterService:
                 )
 
                 if is_complementary:
-                    compatible_ids.append(candidate_id)
+                    compatible_ids.append(str(candidate["user_id"]))
 
             elapsed = (time.perf_counter() - start_time) * 1000
 
