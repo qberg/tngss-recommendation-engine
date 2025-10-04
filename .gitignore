@@ -33,3 +33,5 @@ data/embeddings/users
 
 # Performance profiling
 *.prof
+
+notes.md

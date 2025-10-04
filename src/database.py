@@ -52,11 +52,33 @@ async def initialize_indexes():
             f"[SUCCESS] Index created on {settings.USERS_PROFILE_COLLECTION}.user_id"
         )
 
-        await db[settings.CONTEXT_BUILDER_COLLECTION].create_index(
-            [("user_id", DESCENDING)], name="user_id_-1", unique=True
+        organisation_profile_indexes = [
+            IndexModel([("profile_type", ASCENDING)], name="profile_type_1"),
+            IndexModel([("user_id", ASCENDING)], name="user_id_1", unique=True),
+        ]
+
+        await db[settings.ORGANISATION_PROFILE_COLLECTION].create_indexes(
+            organisation_profile_indexes
         )
+
         logger.info(
-            f"[SUCCESS] Index created on {settings.CONTEXT_BUILDER_COLLECTION}.user_id"
+            f"[SUCCESS] Index created on {settings.ORGANISATION_PROFILE_COLLECTION}.profile_type"
+        )
+
+        context_builder_indexes = [
+            IndexModel([("user_id", DESCENDING)], name="user_id_-1", unique=True),
+            IndexModel([("sector.value", ASCENDING)], name="sector_value_1"),
+            IndexModel(
+                [("looking_to_connect.value", ASCENDING)],
+                name="looking_to_connect_value_1",
+            ),
+        ]
+        await db[settings.CONTEXT_BUILDER_COLLECTION].create_indexes(
+            context_builder_indexes
+        )
+
+        logger.info(
+            f"[SUCCESS] Indexes created on {settings.CONTEXT_BUILDER_COLLECTION}.user_id"
         )
 
         recommendation_indexes = [
@@ -93,10 +115,42 @@ async def initialize_indexes():
         logger.info(
             f"[SUCCESS] Indexes created on {settings.RECOMMENDATIONS_COLLECTION}"
         )
+
+        user_recommendation_indexes = [
+            IndexModel(
+                [
+                    ("user_id", ASCENDING),
+                    ("score", DESCENDING),
+                ],
+                name="user_score_idx",
+            ),
+            IndexModel(
+                [
+                    ("user_id", ASCENDING),
+                    ("matched_user_id", ASCENDING),
+                ],
+                name="user_matched_unique",
+            ),
+            IndexModel(
+                [("matched_user_id", ASCENDING), ("updated_at", DESCENDING)],
+                name="matched_updated_idx",
+            ),
+        ]
+
+        await db[settings.USER_RECOMMENDATIONS_COLLECTION].create_indexes(
+            user_recommendation_indexes
+        )
+
+        logger.info(
+            f"[SUCCESS] Indexes created on {settings.USER_RECOMMENDATIONS_COLLECTION}"
+        )
+
         for collection_name in [
             settings.USERS_PROFILE_COLLECTION,
+            settings.ORGANISATION_PROFILE_COLLECTION,
             settings.CONTEXT_BUILDER_COLLECTION,
             settings.RECOMMENDATIONS_COLLECTION,
+            settings.USER_RECOMMENDATIONS_COLLECTION,
         ]:
             indexes = await db[collection_name].index_information()
             logger.info(f"[INDEXES] {collection_name}: {list(indexes.keys())}")

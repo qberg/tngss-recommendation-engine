@@ -42,7 +42,7 @@ def setup_logger(
         )
     """
     if log_format is None:
-        log_format = "[%(asctime)s] - %(levelname)s - %(message)s"
+        log_format = "[%(asctime)s] - %(name)s %(levelname)s - %(message)s"
     if date_format is None:
         date_format = "%Y-%m-%d %H:%M:%S"
 

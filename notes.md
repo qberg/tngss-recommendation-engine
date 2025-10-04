@@ -321,3 +321,308 @@ Redis ACL: Redis 6+ uses ACL instead of requirepass
 Vector direction: Index naming (_1 vs _-1) must match actual direction
 
 This system handles 50K users, generates recommendations in <500ms, and scales to 1900+ req/min with caching.
+
+Detailed Implementation Plan: User-User Matching System
+Overview
+Build a real-time user matching system that calculates bidirectional compatibility scores for all users when they complete their profile, stores top matches in MongoDB, caches full results in Redis, and handles symmetric updates asynchronously.
+
+Architecture Decisions (Confirmed)
+Data Storage
+
+Separate collection: user_matching_scores (isolated from event recommendations)
+MongoDB: Top 1000 matches per user (~50M records)
+Redis: All 50K scores cached for 24 hours
+Symmetric storage: Store both A→B and B→A as separate records
+
+Scoring Algorithm
+
+Asymmetric intent matching: similarity(A.intent_vector, B.org_vector)
+Bidirectional score: average(A→B, B→A)
+Weights: Start with [0.25, 0.25, 0.5] (same as events)
+Filtering: Must have ≥1 overlapping sector AND complementary user types
+
+Real-Time Requirements
+
+POST endpoint returns immediately (<50ms) with task_id
+Background Celery task does all calculations (~1.5 seconds)
+User polls task status while seeing "Finding matches..." UI
+Results available via GET endpoint once complete
+
+Implementation Phases
+
+PHASE 1: Database Foundation
+Step 1.1: Create Collection Schema
+File: src/database.py
+What: Add indexes for new user_matching_scores collection
+python# Add to initialize_indexes() function:
+
+- Index: (user_id, score DESC) - sorted retrieval
+- Index: (user_id, matched_user_id) UNIQUE - prevent duplicates
+- Index: (matched_user_id, updated_at) - reverse lookup for symmetric updates
+  Why: These indexes enable:
+
+Fast sorted retrieval of matches
+Efficient symmetric update queries
+Duplicate prevention
+
+Validation: Run app, check logs for index creation confirmation
+
+Step 1.2: Add Filtering Indexes
+File: src/database.py
+What: Add indexes on context and org collections for filtering
+python# Context builder collection:
+
+- Index: (sector) - for sector overlap filtering
+- Index: (looking_to_connect) - for complementarity checks
+
+# Organisation profile collection:
+
+- Index: (profile_type) - for complementarity checks
+  Why: Pre-filtering 50K→5K users requires fast lookups on these fields
+  Validation: Run app, verify indexes exist with db.collection.getIndexes()
+
+PHASE 2: Filtering Service
+Step 2.1: Create UserFilterService
+File: src/recommendations/user_filter_service.py (NEW)
+What: Service to filter compatible candidates before embeddings
+Methods to implement (one at a time):
+Method 1: async def get_all_active_user_ids() -> List[str]
+
+Query MongoDB for all users where is_deleted=False
+Return list of user IDs
+Test: Print count, should be ~50K
+
+Method 2: async def get_user_filter_criteria(user_id: str) -> Dict
+
+Fetch user's sector interests, profile_type, looking_to_connect
+Return as dict: {sectors: [...], profile_type: "startup", wants: [...]}
+Test: Print criteria for sample user
+
+Method 3: async def filter_compatible_candidates(user_id: str, all_user_ids: List[str]) -> List[str]
+
+Get user's criteria
+MongoDB aggregate query:
+
+Match: user_id in all_user_ids
+Filter: overlapping sectors (array intersection)
+Filter: complementary types (either direction)
+
+Return filtered list
+Test: Should reduce 50K → 5-10K
+
+Validation: Run filter for test user, log count before/after
+
+PHASE 3: Matching Service
+Step 3.1: Create UserMatchingService
+File: src/recommendations/user_matching_service.py (NEW)
+What: Core matching logic with vectorized calculations
+Dependencies: Reuse existing UserEmbeddingService, EmbeddingService
+Methods to implement (one at a time):
+Method 1: def calculate_asymmetric_similarity(user_a_embeddings: Dict, user_b_embeddings: Dict) -> Dict
+
+Calculate A→B: similarity(A.intent, B.org)
+Calculate B→A: similarity(B.intent, A.org)
+Also calculate personal and org similarities for breakdown
+Return dict with all scores
+Test: Compare two sample users, print scores
+
+Method 2: def calculate_bidirectional_score(a_to_b: float, b_to_a: float) -> float
+
+Return average(a_to_b, b_to_a)
+Test: Verify math with sample values
+
+Method 3: async def calculate_matches_vectorized(user_id: str, candidate_ids: List[str]) -> List[Dict]
+
+Load user embeddings (cached or generate)
+Batch load candidate embeddings from pickle files
+Stack into numpy matrices
+Vectorized calculation (like your event matching)
+Build list of score dicts
+Sort by bidirectional_score descending
+Test: Time this - should be ~50ms for 5K candidates
+
+Validation: Compare vectorized vs loop calculation for 10 users, verify same results
+
+Step 3.2: Batch Embedding Loader
+File: src/recommendations/user_matching_service.py
+What: Efficiently load multiple user embeddings at once
+Method: def load_user_embeddings_batch(user_ids: List[str]) -> Dict[str, Dict]
+
+For each user_id, load from pickle file
+Return dict: {user_id: {personal: array, org: array, intent: array}}
+Skip missing embeddings (log warning)
+Test: Load 1000 embeddings, time it (~200ms expected)
+
+Validation: Verify loaded embeddings match individual loads
+
+PHASE 4: Score Storage Service
+Step 4.1: Create MatchScoreService
+File: src/recommendations/match_score_service.py (NEW)
+What: Handle MongoDB operations for user matching scores
+Why separate from ScoreService: Different collection, different operations
+Methods to implement:
+Method 1: async def store_match_scores(user_id: str, scores: List[Dict]) -> bool
+
+Convert to MongoDB documents
+Bulk upsert with UpdateOne operations
+Handle both directions if symmetric
+Test: Store 100 scores, verify in MongoDB
+
+Method 2: async def get_user_matches(user_id: str, limit: int, offset: int) -> List[Dict]
+
+Query with pagination
+Sort by score descending
+Return serialized results
+Test: Fetch matches for test user
+
+Method 3: async def delete_user_matches(user_id: str) -> int
+
+Delete all records where user_id matches
+Return count deleted
+Test: Create then delete, verify count
+
+Validation: Insert, query, delete cycle with test data
+
+PHASE 5: Redis Caching
+Step 5.1: Setup Redis Client
+File: src/config.py (modify)
+What: Add Redis connection settings
+pythonREDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/2")
+REDIS_MATCH_CACHE_TTL = 86400 # 24 hours
+File: src/cache/redis_client.py (NEW)
+What: Redis connection wrapper
+Methods:
+
+async def set_user_matches(user_id: str, scores: List[Dict])
+async def get_user_matches(user_id: str) -> Optional[List[Dict]]
+async def delete_user_matches(user_id: str)
+
+Validation: Set and retrieve test data
+
+PHASE 6: Background Tasks
+Step 6.1: Main Calculation Task
+File: src/recommendations/tasks.py (modify)
+What: Add new Celery task for user matching
+Task: @celery_app.task calculate_user_matches(user_id: str)
+Logic flow:
+
+Update progress: 10% - "Loading user data..."
+Generate user embeddings (or load cached)
+Update progress: 30% - "Finding compatible users..."
+Get filtered candidates (5-10K)
+Update progress: 50% - "Calculating matches..."
+Vectorized calculation for all candidates
+Update progress: 70% - "Storing results..."
+Store top 1000 in MongoDB
+Cache all scores in Redis
+Update progress: 90% - "Finalizing..."
+Queue symmetric updates task
+Return success
+
+Validation: Run task manually with test user_id, check logs and database
+
+Step 6.2: Symmetric Update Task
+File: src/recommendations/tasks.py (modify)
+What: Update reverse matches in background
+Task: @celery_app.task update_reverse_matches(user_id: str, match_ids: List[str])
+Logic:
+
+For each matched_user_id in top 1000:
+
+Load their embeddings
+Recalculate their score with user_id
+Update their record where matched_user_id = user_id
+Batch operations for efficiency
+
+Why separate task: Don't block main task completion, can retry independently
+Validation: Create user A matches, verify user B records update
+
+PHASE 7: API Endpoints
+Step 7.1: Calculate Endpoint
+File: src/recommendations/router.py (modify)
+What: Queue calculation and return immediately
+Endpoint: POST /recommendations/user/{user_id}/matches/calculate
+Logic:
+
+Validate user exists (10ms)
+Check if already calculated (20ms)
+If exists: return cache_hit=true
+If not: queue Celery task
+Return task_id immediately
+
+Response:
+json{
+"success": true,
+"message": "Calculation queued",
+"task_id": "abc-123",
+"cache_hit": false
+}
+Validation: Call endpoint, verify task queues
+
+Step 7.2: Retrieval Endpoint
+File: src/recommendations/router.py (modify)
+What: Get user's matches with pagination
+Endpoint: GET /recommendations/user/{user_id}/matches?limit=20&offset=0
+Logic:
+
+If offset < 1000: Query MongoDB
+If offset >= 1000: Check Redis cache
+If not found: Return 404 with "Calculate first" message
+
+Response:
+json[
+{
+"user_id": "...",
+"matched_user_id": "...",
+"score": 85,
+"similarity_breakdown": {...}
+}
+]
+Validation: Calculate matches, then retrieve them
+
+Step 7.3: Task Status Endpoint
+File: src/recommendations/router.py (already exists)
+What: Reuse existing task status endpoint
+Endpoint: GET /recommendations/task/{task_id}/status
+No changes needed - already handles progress updates
+Validation: Poll while task runs, see progress updates
+
+PHASE 8: Testing & Validation
+Step 8.1: Unit Tests
+For each service:
+
+Test filtering logic with mock data
+Test vectorized calculations accuracy
+Test score storage and retrieval
+
+Step 8.2: Integration Tests
+End-to-end flow:
+
+Create test user with complete profile
+POST /calculate, get task_id
+Poll /task/status until complete
+GET /matches, verify results
+Check MongoDB for top 1000
+Check Redis for full cache
+
+Step 8.3: Performance Tests
+Measure:
+
+User embedding generation: <200ms
+Filtering 50K→5K: <50ms
+Vectorized calculation 5K: <50ms
+MongoDB bulk insert 1000: <250ms
+Total task time: <1.5 seconds
+
+File Structure Summary
+src/
+├── recommendations/
+│ ├── user_filter_service.py # NEW - Phase 2
+│ ├── user_matching_service.py # NEW - Phase 3
+│ ├── match_score_service.py # NEW - Phase 4
+│ ├── tasks.py # MODIFY - Phase 6
+│ └── router.py # MODIFY - Phase 7
+├── cache/
+│ └── redis_client.py # NEW - Phase 5
+├── database.py # MODIFY - Phase 1
+└── config.py # MODIFY - Phase 5

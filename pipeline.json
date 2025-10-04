@@ -1,0 +1,893 @@
+{
+  "pipeline": [
+    {
+      "$match": {
+        "$and": [
+          {
+            "is_deleted": {
+              "$eq": "?bool"
+            }
+          },
+          {
+            "is_email_verified": {
+              "$eq": "?bool"
+            }
+          },
+          {
+            "role": {
+              "$eq": "?string"
+            }
+          },
+          {
+            "email_id": {
+              "$in": "?array<?string>"
+            }
+          },
+          {
+            "_id": {
+              "$not": {
+                "$eq": "?objectId"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "$lookup": {
+        "from": "profile_management",
+        "as": "profile_details",
+        "let": {
+          "userId": "$_id"
+        },
+        "pipeline": [
+          {
+            "$match": {
+              "$expr": {
+                "$eq": ["$user_id", "$$userId"]
+              }
+            }
+          },
+          {
+            "$limit": "?number"
+          }
+        ]
+      }
+    },
+    {
+      "$lookup": {
+        "from": "user_settings",
+        "as": "user_settings",
+        "let": {
+          "userId": "$_id"
+        },
+        "pipeline": [
+          {
+            "$match": {
+              "$expr": {
+                "$eq": ["$user_id", "$$userId"]
+              }
+            }
+          },
+          {
+            "$limit": "?number"
+          }
+        ]
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$profile_details",
+        "preserveNullAndEmptyArrays": "?bool"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$user_settings",
+        "preserveNullAndEmptyArrays": "?bool"
+      }
+    },
+    {
+      "$lookup": {
+        "from": "connection_request_management",
+        "as": "connection_info",
+        "let": {
+          "userId": "$_id",
+          "currentUserId": "?objectId"
+        },
+        "pipeline": [
+          {
+            "$match": {
+              "$expr": {
+                "$and": [
+                  {
+                    "$or": [
+                      {
+                        "$eq": ["$request_from", "$$currentUserId"]
+                      },
+                      {
+                        "$eq": ["$request_to", "$$currentUserId"]
+                      }
+                    ]
+                  },
+                  {
+                    "$or": [
+                      {
+                        "$eq": ["$request_from", "$$userId"]
+                      },
+                      {
+                        "$eq": ["$request_to", "$$userId"]
+                      }
+                    ]
+                  },
+                  {
+                    "$ne": ["$status", "?string"]
+                  },
+                  {
+                    "$eq": ["$is_deleted", "?bool"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "$sort": {
+              "_id": -1
+            }
+          },
+          {
+            "$limit": "?number"
+          }
+        ]
+      }
+    },
+    {
+      "$lookup": {
+        "from": "attendee-passes",
+        "as": "attendee_passes_details",
+        "let": {
+          "userId": "$email_id"
+        },
+        "pipeline": [
+          {
+            "$match": {
+              "$expr": {
+                "$eq": ["$email", "$$userId"]
+              }
+            }
+          },
+          {
+            "$limit": "?number"
+          }
+        ]
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$attendee_passes_details",
+        "preserveNullAndEmptyArrays": "?bool"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$connection_info",
+        "preserveNullAndEmptyArrays": "?bool"
+      }
+    },
+    {
+      "$lookup": {
+        "from": "ai_score",
+        "as": "ai_score_details",
+        "let": {
+          "user_id": "?objectId",
+          "user_id_2": "$_id"
+        },
+        "pipeline": [
+          {
+            "$match": {
+              "$expr": {
+                "$and": [
+                  {
+                    "$eq": ["$reference_id", "$$user_id_2"]
+                  },
+                  {
+                    "$eq": ["$user_id", "$$user_id"]
+                  },
+                  {
+                    "$eq": ["$reference_type", "?string"]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$ai_score_details",
+        "preserveNullAndEmptyArrays": "?bool"
+      }
+    },
+    {
+      "$project": {
+        "_id": true,
+        "profile_image": true,
+        "first_name": {
+          "$ifNull": ["$first_name", "?string"]
+        },
+        "user_id": "$_id",
+        "designation": {
+          "$ifNull": ["$profile_details.designation", "?string"]
+        },
+        "organization_name": {
+          "$ifNull": ["$profile_details.organization_name", "?string"]
+        },
+        "profile_percentage": {
+          "$ifNull": ["$profile_percentage", "?number"]
+        },
+        "bio_exists": {
+          "$cond": [
+            {
+              "$and": [
+                {
+                  "$ne": [
+                    {
+                      "$ifNull": ["$profile_details.bio", "?string"]
+                    },
+                    "?string"
+                  ]
+                }
+              ]
+            },
+            "?bool",
+            "?bool"
+          ]
+        },
+        "already_connection_request_send": {
+          "$cond": [
+            {
+              "$gt": [
+                {
+                  "$type": ["$connection_info._id"]
+                },
+                "?string"
+              ]
+            },
+            "?bool",
+            "?bool"
+          ]
+        },
+        "connection_request_status": {
+          "$cond": [
+            {
+              "$gt": [
+                {
+                  "$type": ["$connection_info.status"]
+                },
+                "?string"
+              ]
+            },
+            "$connection_info.status",
+            "?string"
+          ]
+        },
+        "connection_reference_id": {
+          "$cond": [
+            {
+              "$gt": [
+                {
+                  "$type": ["$connection_info._id"]
+                },
+                "?string"
+              ]
+            },
+            "$connection_info._id",
+            "?string"
+          ]
+        },
+        "sender_or_reciever": {
+          "$cond": [
+            {
+              "$eq": [
+                {
+                  "$convert": {
+                    "input": "$connection_info.request_from",
+                    "to": "string",
+                    "format": "?string"
+                  }
+                },
+                "?string"
+              ]
+            },
+            "?string",
+            {
+              "$cond": [
+                {
+                  "$in": [
+                    {
+                      "$type": ["$connection_info.request_from"]
+                    },
+                    "?array<?string>"
+                  ]
+                },
+                "?string",
+                "?string"
+              ]
+            }
+          ]
+        },
+        "organisation_type": {
+          "$switch": {
+            "branches": [
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.organisation_type",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              }
+            ],
+            "default": "?string"
+          }
+        },
+        "sector": {
+          "$switch": {
+            "branches": [
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$eq": [
+                    "$attendee_passes_details.sector_interested",
+                    "?string"
+                  ]
+                },
+                "then": "?string"
+              }
+            ],
+            "default": "?string"
+          }
+        },
+        "ai_enabled": {
+          "$switch": {
+            "branches": [
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["$profile_percentage", "?number"]
+                    }
+                  ]
+                },
+                "then": "?bool"
+              }
+            ],
+            "default": "?bool"
+          }
+        },
+        "ai_popup_header": {
+          "$switch": {
+            "branches": [
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$ne": ["$profile_percentage", "?number"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              }
+            ],
+            "default": "?string"
+          }
+        },
+        "ai_popup_description": {
+          "$switch": {
+            "branches": [
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$ne": ["$profile_percentage", "?number"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              }
+            ],
+            "default": "?string"
+          }
+        },
+        "ai_popup_cta": {
+          "$switch": {
+            "branches": [
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              },
+              {
+                "case": {
+                  "$and": [
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    },
+                    {
+                      "$eq": ["?bool", "?bool"]
+                    }
+                  ]
+                },
+                "then": "?string"
+              }
+            ],
+            "default": "?string"
+          }
+        },
+        "ai_score": {
+          "$ifNull": ["$ai_score_details.score", "?number"]
+        }
+      }
+    }
+  ]
+}

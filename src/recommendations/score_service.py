@@ -5,7 +5,7 @@ from time import perf_counter, time
 from typing import Any, Dict, List, Optional
 
 from bson import ObjectId
-from pymongo import ASCENDING, DESCENDING, IndexModel, UpdateOne
+from pymongo import UpdateOne
 from pymongo.asynchronous.database import AsyncDatabase
 
 from src.config import settings

@@ -2,21 +2,14 @@
 Faiss/VectorStore service to store the vector embeddings generated from openai
 """
 
-import asyncio
 import hashlib
 import pickle
-import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-from bson import ObjectId
 
-from src.config import settings
-from src.database import connect_to_mongo, get_database
-from src.events.client import EventsClient
-from src.events.service import EventService
 from src.utils.setup_logger import setup_logger
 from src.vector_store.config import vector_store_config
 from src.vector_store.exceptions import (InvalidEmbeddingDataError,

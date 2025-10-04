@@ -13,6 +13,18 @@ ProfileType = Literal[
     "others",
 ]
 
+PROFILE_LABEL_KEY_MAP = {
+    "Startup": "startup",
+    "Investor": "investors",
+    "Aspirant": "aspirants_individuals",
+    "Government": "government",
+    "Mentor": "mentor_sme",
+    "Incubation & Acceleration": "incubation_acceleration",
+    "Industry & Corporate": "industry_corporate",
+    "Ecosystem Partners": "ecosystem_service_provider",
+    "Others": "others",
+}
+
 ## Constants
 SECTOR_VALUES = [
     "sector_agnostic",
@@ -47,6 +59,40 @@ SECTOR_VALUES = [
     "travel_tourism",
     "web3_blockchain_vr_ar",
 ]
+
+SECTOR_LABEL_KEY_MAP = {
+    "Sector Agnostic": "sector_agnostic",
+    "Aerospace, Defence & Spacetech": "aerospace_defence_spacetech",
+    "Agriculture & Foodtech": "agriculture_foodtech",
+    "AI, ML & IoT": "ai_ml_iot",
+    "Art, Culture & Architecture": "art_culture_architecture",
+    "Automotive, EV & Smart Mobility": "automotive_ev_smart_mobility",
+    "Blue Economy": "blue_economy",
+    "Chemicals & Materials": "chemicals_materials",
+    "Circular Economy": "circular_economy",
+    "Climate Tech & Clean Energy": "climate_tech_clean_energy",
+    "Data Mining & Analytics": "data_mining_analytics",
+    "Edutech": "edutech",
+    "Femtech": "femtech",
+    "Fintech & Insurtech": "fintech_insurtech",
+    "Healthcare & Life Sciences": "healthcare_life_sciences",
+    "HR Tech & Smart Workforce": "hr_tech_smart_workforce",
+    "Industry 4.0 & Advanced Manufacturing": "industry_4_advanced_manufacturing",
+    "Lifestyle, Personal Care & D2C": "lifestyle_personalcare_d2c",
+    "Marketing Tech & MICE": "marketing_tech_mice",
+    "Media & Entertainment": "media_entertainment",
+    "PropTech, Legal Tech & RegTech": "proptech_legaltech_regtech",
+    "Retail Tech": "retail_tech",
+    "SaaS, Software & IT/ITES": "saas_software_it_ites",
+    "Smart Cities & E-Governance": "smart_cities_e_governance",
+    "Social Impact, Rural Livelihood & Sustainability": "social_impact_rural_livelihood_sustainability",
+    "Sports Tech & Gaming": "sports_tech_gaming",
+    "Supply Chain & Logistics": "supply_chain_logistics",
+    "Telecom, Networking & Hardware": "telecom_networking_hardware",
+    "TextileTech & Fashion": "textiletech_fashion",
+    "Travel & Tourism": "travel_tourism",
+    "Web3.0, Blockchain, VR/AR": "web3_blockchain_vr_ar",
+}
 
 PROFILE_VALUES = [
     "startup",

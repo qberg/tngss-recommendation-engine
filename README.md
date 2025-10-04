@@ -41,3 +41,15 @@ celery -A src.recommendations.celery_config worker --loglevel=info --concurrency
 5. Compare with cached hash
 6. If different → regenerate user embeddings only
 7. If same → return cached scores
+
+## User recommendations collection justification:
+
+1. First Index: user_id + score
+   - For queries of type show me top matches of this user
+   - score is sorted descending, Mongo can use the index directly
+2. Second Index: user_id + mathced_user_id, unique
+   - No duplicate (A,B) pairs
+   - O(1) lookup for if user A is matched with user B
+3. Third Index: matched_user_id + updatedAt
+   - Who has this user as a match
+   - For symmetric updates
