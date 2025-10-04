@@ -107,7 +107,7 @@ class UserFilterService:
             elapsed = (time.perf_counter() - start_time) * 1000
 
             logger.info(
-                f"[{method}] [SUCCESS] User {user_id} criteria in {elapsed:.2f}ms "
+                f"[{method}] [SUCCESS] Fetched User {user_id} criteria in {elapsed:.2f}ms \n"
                 f"(fetch: {fetch_time:.2f}ms) - "
                 f"sectors={len(sectors)}, type={profile_type}, wants={len(looking_to_connect)}"
             )
@@ -151,7 +151,7 @@ class UserFilterService:
             )
 
             cursor = await self.db[settings.CONTEXT_BUILDER_COLLECTION].aggregate(
-                pipeline
+                pipeline, allowDiskUse=True
             )
             candidates = await cursor.to_list(length=None)
 
@@ -222,7 +222,7 @@ async def test():
     complete_count = 0
     incomplete_count = 0
 
-    for user_id in user_ids:
+    for user_id in user_ids[:5]:
         criteria = await service.get_user_filtering_criteria(user_id)
 
         if criteria:
