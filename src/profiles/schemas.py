@@ -13,7 +13,7 @@ class LoginInfo(BaseModel):
     last_name: Optional[str] = None
     email_id: str
     phone_number: str
-    organisation_profile_id: PyObjectId
+    organisation_profile_id: Optional[PyObjectId] = None
     status: str
     is_deleted: bool = False
     createdAt: datetime

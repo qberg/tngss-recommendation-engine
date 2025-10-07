@@ -164,7 +164,7 @@ class EventService:
                 event = Event.from_api_response(event_data)
                 event_objects.append(event)
             except Exception as e:
-                logger.error(f"Could not parse event: {e}")
+                logger.error(f"Could not parse event: {e} {event_data['id']}")
                 continue
 
         formatted_events = []

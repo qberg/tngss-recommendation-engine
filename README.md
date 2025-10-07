@@ -30,6 +30,7 @@ tail -f /var/log/fastapi/error.log           # Monitor API
 
 
 celery -A src.recommendations.celery_config worker --loglevel=info --concurrency=4
+ sudo supervisorctl tail -f fastapi-workers:celery_worker
 ```
 
 # On each request, checks:

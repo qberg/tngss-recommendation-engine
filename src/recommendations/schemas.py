@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,23 @@ class RecommendationResponse(BaseModel):
     reference_id: str
     reference_type: str
     score: float = Field(..., ge=10, le=95)
+
+
+class MatchesResponse(BaseModel):
+    """Response format for user matches"""
+
+    user_id: str
+    matched_user_id: str
+    similarity_breakdown: Dict[str, float]
+    score: float = Field(..., ge=10, le=95)
+
+
+class UserUserMatchResponse(BaseModel):
+    """Resposne format for user user matches"""
+
+    user_id: str
+    matched_user_id: str
+    score: float = Field(..., ge=5, le=95)
 
 
 class CalculateRecommendationsResponse(BaseModel):

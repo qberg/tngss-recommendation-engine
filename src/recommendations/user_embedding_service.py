@@ -142,6 +142,7 @@ class UserEmbeddingService:
         self, user_id: str, force_regenerate: bool = False
     ) -> Dict[str, np.ndarray]:
         """Get cached embeddings or generate new ones if needed."""
+        method = self.get_or_generate_user_embeddings.__name__
         try:
             if not force_regenerate:
                 cached_embeddings = self.vector_store.get_user_embeddings(user_id)
@@ -156,16 +157,14 @@ class UserEmbeddingService:
 
                     if not should_regen:
                         logger.info(
-                            f"[INFO][UserEmbeddingService] Using cached embeddings for user {user_id}"
+                            f"[INFO] [{method}] Using cached embeddings for user {user_id}"
                         )
                         return cached_embeddings
 
-                    logger.info(
-                        f"[INFO] Cache invalid for user {user_id[:8]}: {reason}"
-                    )
+                    logger.info(f"[INFO] Cache invalid for user {user_id}: {reason}")
 
             logger.info(
-                f"[***][UserEmbeddingService] Generating new embeddings for user {user_id}"
+                f"[***] [{method}] Generating new embeddings for user {user_id}"
             )
             raw_data = await self.get_raw_user_data(user_id)
 
@@ -181,12 +180,12 @@ class UserEmbeddingService:
             )
 
             logger.info(
-                f"[SUCCESS] Generated and cached embeddings for user {user_id[:8]}"
+                f"[{method} - SUCCESS] Generated and cached embeddings for user {user_id}"
             )
             return embeddings
 
         except Exception as e:
             logger.error(
-                f"[FAILED] Error getting/generating embeddings for user {user_id[:8]}: {e}"
+                f"[{method} - FAILED] Error getting/generating embeddings for user {user_id}: {e}"
             )
             raise e

@@ -268,11 +268,18 @@ class ProfileService:
 
     def create_all_texts(self, user_data: UserData) -> List[str]:
         """Create all three text types for a user."""
-        return [
-            self.create_personal_text(user_data),
-            self.create_org_text(user_data),
-            self.create_intent_text(user_data),
+
+        personal = self.create_personal_text(user_data)
+        org = self.create_org_text(user_data)
+        intent = self.create_intent_text(user_data)
+
+        texts = [
+            personal if personal.strip() else "User profile incomplete.",
+            org if org.strip() else "No organization information provided.",
+            intent if intent.strip() else "No explicit intent provided.",
         ]
+
+        return texts
 
 
 async def main():
