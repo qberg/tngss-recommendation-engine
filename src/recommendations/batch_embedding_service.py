@@ -193,11 +193,6 @@ class BatchEmbeddingService:
     ) -> Dict[str, int | float]:
         """
         Generate event recommendation scores for all users with embeddings.
-
-        Args:
-            force_recalculate: If True, recalculate even if scores exist
-
-        Returns dict with counts: calculated, skipped, failed.
         """
         method = self.generate_all_user_event_scores.__name__
         try:
@@ -218,9 +213,45 @@ class BatchEmbeddingService:
             ]
 
             logger.info(
-                f"[{method}] Processing event scores for {len(users_with_embeddings)} users "
-                f"with embeddings"
+                f"[{method}] Processing event scores for {len(users_with_embeddings)} users"
             )
+
+            # ========== LOAD EVENT EMBEDDINGS ONCE ==========
+            logger.info(f"[{method}] Loading event embeddings (one time)...")
+            t_events = time.perf_counter()
+
+            # Get all event IDs
+            from pathlib import Path
+
+            events_dir = Path(
+                recommendation_service.event_service.vector_store.events_embeddings_dir
+            )
+            cached_event_files = list(events_dir.glob("*.pkl"))
+            event_ids = [f.stem for f in cached_event_files]
+
+            # Load all event embeddings once
+            event_embeddings_map = recommendation_service.event_service.vector_store.get_all_event_embeddings(
+                event_ids
+            )
+
+            # Filter valid embeddings and prepare for vectorization
+            valid_event_ids = []
+            valid_embeddings_list = []
+            for event_id, embedding in event_embeddings_map.items():
+                if embedding is not None:
+                    valid_event_ids.append(event_id)
+                    valid_embeddings_list.append(embedding)
+
+            # Stack into matrix ONCE
+            import numpy as np
+
+            event_matrix = np.vstack(valid_embeddings_list)
+
+            event_load_time = (time.perf_counter() - t_events) * 1000
+            logger.info(
+                f"[{method}] Loaded {len(valid_event_ids)} event embeddings in {event_load_time:.2f}ms"
+            )
+            # ================================================
 
             calculated = 0
             skipped = 0
@@ -228,7 +259,7 @@ class BatchEmbeddingService:
 
             for idx, user_id in enumerate(users_with_embeddings, 1):
                 try:
-                    # Check if scores already exist and are fresh
+                    # Check if scores already exist
                     if not force_recalculate:
                         stored = await score_service.get_stored_scores(
                             user_id, "event", max_age_hours=24, limit=1
@@ -237,15 +268,46 @@ class BatchEmbeddingService:
                             skipped += 1
                             continue
 
-                    # Generate event scores
-                    scores = await recommendation_service.generate_event_scores_for_user_fast(
-                        user_id, max_events=-1, force_user_regenerate=False
+                    # Get user embeddings
+                    user_embeddings = await self.user_embedding_service.get_or_generate_user_embeddings(
+                        user_id, force_regenerate=False
                     )
 
-                    if scores:
-                        # Store to database
-                        await score_service.store_scores_to_database(scores)
-                        calculated += 1
+                    # Vectorized calculation using pre-loaded event matrix
+                    user_matrix = np.array(
+                        [
+                            user_embeddings["personal"],
+                            user_embeddings["org"],
+                            user_embeddings["intent"],
+                        ]
+                    )
+
+                    similarity_matrix = user_matrix @ event_matrix.T
+                    weights = np.array([0.25, 0.25, 0.5])
+                    final_scores = weights @ similarity_matrix
+
+                    # Build scores list
+                    scores = []
+                    for idx_event, event_id in enumerate(valid_event_ids):
+                        scores.append(
+                            {
+                                "user_id": user_id,
+                                "target_id": event_id,
+                                "similarity_score": float(final_scores[idx_event]),
+                                "similarity_breakdown": {
+                                    "personal": float(similarity_matrix[0, idx_event]),
+                                    "org": float(similarity_matrix[1, idx_event]),
+                                    "intent": float(similarity_matrix[2, idx_event]),
+                                },
+                            }
+                        )
+
+                    # Normalize to percentage
+                    scores = score_service.normalize_scores_to_percentage(scores)
+
+                    # Store to database
+                    await score_service.store_scores_to_database(scores)
+                    calculated += 1
 
                     if idx % 50 == 0:
                         logger.info(
@@ -281,12 +343,7 @@ class BatchEmbeddingService:
     ) -> Dict[str, int | float]:
         """
         Generate user match scores for all users with embeddings.
-
-        Args:
-            apply_filters: If True, only match compatible candidates
-            force_recalculate: If True, recalculate even if scores exist
-
-        Returns dict with counts: calculated, skipped, failed.
+        Optimized: Loads all user embeddings once upfront.
         """
         method = self.generate_all_user_match_scores.__name__
         try:
@@ -313,6 +370,20 @@ class BatchEmbeddingService:
                 f"(filters={apply_filters})"
             )
 
+            # ========== LOAD ALL USER EMBEDDINGS ONCE ==========
+            logger.info(f"[{method}] Loading all user embeddings (one time)...")
+            t_load = time.perf_counter()
+
+            all_user_embeddings = match_service.load_user_embeddings_batch(
+                users_with_embeddings
+            )
+
+            load_time = (time.perf_counter() - t_load) * 1000
+            logger.info(
+                f"[{method}] Loaded {len(all_user_embeddings)} user embeddings in {load_time:.2f}ms"
+            )
+            # ===================================================
+
             calculated = 0
             skipped = 0
             failed = 0
@@ -325,6 +396,14 @@ class BatchEmbeddingService:
                         if stored:
                             skipped += 1
                             continue
+
+                    # Skip if user embeddings not loaded
+                    if user_id not in all_user_embeddings:
+                        logger.warning(
+                            f"[{method}] Embeddings not found for {user_id[:8]}"
+                        )
+                        failed += 1
+                        continue
 
                     # Get candidates
                     if apply_filters:
@@ -342,10 +421,70 @@ class BatchEmbeddingService:
                         skipped += 1
                         continue
 
-                    # Calculate matches
-                    matches = await match_service.calculate_matches_vectorized(
-                        user_id, candidates
+                    # Filter candidates to only those with loaded embeddings
+                    valid_candidates = [
+                        c for c in candidates if c in all_user_embeddings
+                    ]
+
+                    if not valid_candidates:
+                        skipped += 1
+                        continue
+
+                    # Calculate matches using pre-loaded embeddings
+                    user_embeddings = all_user_embeddings[user_id]
+
+                    # Build candidate matrices
+                    import numpy as np
+
+                    personal_matrix = np.vstack(
+                        [all_user_embeddings[c]["personal"] for c in valid_candidates]
                     )
+                    org_matrix = np.vstack(
+                        [all_user_embeddings[c]["org"] for c in valid_candidates]
+                    )
+                    intent_matrix = np.vstack(
+                        [all_user_embeddings[c]["intent"] for c in valid_candidates]
+                    )
+
+                    # User vectors
+                    user_personal = user_embeddings["personal"]
+                    user_org = user_embeddings["org"]
+                    user_intent = user_embeddings["intent"]
+
+                    # Vectorized calculations
+                    a_to_b_scores = user_intent @ org_matrix.T
+                    b_to_a_scores = intent_matrix @ user_org
+                    personal_scores = user_personal @ personal_matrix.T
+                    org_scores = user_org @ org_matrix.T
+                    bidirectional_scores = (a_to_b_scores + b_to_a_scores) / 2.0
+
+                    # Build results
+                    matches = []
+                    for idx_candidate, candidate_id in enumerate(valid_candidates):
+                        matches.append(
+                            {
+                                "user_id": user_id,
+                                "matched_user_id": candidate_id,
+                                "similarity_score": float(
+                                    bidirectional_scores[idx_candidate]
+                                ),
+                                "similarity_breakdown": {
+                                    "a_to_b": float(a_to_b_scores[idx_candidate]),
+                                    "b_to_a": float(b_to_a_scores[idx_candidate]),
+                                    "personal": float(personal_scores[idx_candidate]),
+                                    "org": float(org_scores[idx_candidate]),
+                                    "bidirectional": float(
+                                        bidirectional_scores[idx_candidate]
+                                    ),
+                                },
+                            }
+                        )
+
+                    # Sort by score
+                    matches.sort(key=lambda x: x["similarity_score"], reverse=True)
+
+                    # Normalize to percentage
+                    matches = match_service.normalize_scores_to_percentage(matches)
 
                     if matches:
                         # Store top 1000

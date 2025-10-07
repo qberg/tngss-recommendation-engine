@@ -23,6 +23,7 @@ from src.recommendations.schemas import (CalculateStatusResponse,
 from src.recommendations.service import RecommendationService
 from src.recommendations.tasks import (calculate_user_matches,
                                        calculate_user_recommendations)
+from src.recommendations.user_embedding_service import UserEmbeddingService
 from src.recommendations.user_matching_service import UserMatchingService
 from src.utils.setup_logger import setup_logger
 

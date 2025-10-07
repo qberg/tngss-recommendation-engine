@@ -97,7 +97,7 @@ class MatchScoreService:
             )
 
             if not matches:
-                logger.info(f"[{method}] No matches found for user {user_id[:8]}")
+                logger.info(f"[{method}] No matches found for user {user_id}")
                 return None
 
             for match in matches:
